@@ -33,49 +33,56 @@
 // REMINDER: make sure you understand the viral nature and terms of the above license. If you are writing code derived
 // from this file, you must offer your source under the GPL license too.
 
-static jevois::ParameterCategory const ParamCateg("FirstVision_Edit Options");
+static jevois::ParameterCategory const ParamCateg("FirstVision_Simplified Options");
 
 //! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(hsigma, unsigned char, "Set the hue range. Hue range is <hcue-hsigma, hcue+hsigma>.",
-				       30, jevois::Range<unsigned char>(0, 89), ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(ssigma, unsigned char, "Set the sat range. Sat range is <scue-ssigma, 255>.",
-				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vsigma, unsigned char, "Set the value range. Sat range is <vcue-vsigma, 255>.",
-				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(hcue, unsigned char, "Initial cue for target hue (0=red/do not use because of "
+JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(hmin, unsigned char, "Initial min target hue (0=red/do not use because of "
 				       "wraparound, 30=yellow, 45=light green, 60=green, 75=green cyan, 90=cyan, "
 				       "105=light blue, 120=blue, 135=purple, 150=pink)",
-				       45, jevois::Range<unsigned char>(0, 179), ParamCateg);
+				       30, jevois::Range<unsigned char>(0, 179), ParamCateg);
 
 //! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(scue, unsigned char, "Initial cue for target saturation lower bound",
-				       50, ParamCateg);
+JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(hmax, unsigned char, "Initial max target hue (0=red/do not use because of "
+				       "wraparound, 30=yellow, 45=light green, 60=green, 75=green cyan, 90=cyan, "
+				       "105=light blue, 120=blue, 135=purple, 150=pink)",
+				       30, jevois::Range<unsigned char>(0, 179), ParamCateg);
 
 //! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vcue, unsigned char, "Initial cue for target value (brightness) lower bound",
-				       200, ParamCateg);
+JEVOIS_DECLARE_PARAMETER(houter, bool, "Use exclusive hue range",
+                         false, ParamCateg);
 
 //! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(maxnumobj, size_t, "Max number of objects to declare a clean image. If more blobs are "
-			 "detected in a frame, we skip that frame before we even try to analyze shapes of the blobs",
-                         100, ParamCateg);
+JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smin, unsigned char, "Set the sat min. Sat range is <smin, smax>.",
+				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
 //! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(hullarea, jevois::Range<unsigned int>, "Range of object area (in pixels) to track. Use this "
-			 "if you want to skip shape analysis of very large or very small blobs",
-                         jevois::Range<unsigned int>(20*20, 300*300), ParamCateg);
+JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smax, unsigned char, "Set the sat max. Sat range is <smin, smax>.",
+				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
 //! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(hullfill, int, "Max fill ratio of the convex hull (percent). Lower values mean your shape "
+JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmin, unsigned char, "Set the value min. Value range is <vmin, vmax>.",
+				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
+
+//! Parameter \relates FirstVision
+JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmax, unsigned char, "Set the value max. Value range is <vmin, vmax>.",
+				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
+
+// //! Parameter \relates FirstVision
+// JEVOIS_DECLARE_PARAMETER(maxnumobj, size_t, "Max number of objects to declare a clean image. If more blobs are "
+// 			 "detected in a frame, we skip that frame before we even try to analyze shapes of the blobs",
+//                          100, ParamCateg);
+
+//! Parameter \relates FirstVision
+JEVOIS_DECLARE_PARAMETER(fillratio_min, int, "Min fill ratio of the convex hull (percent). Higher values mean your shape "
+			 "occupies a higher fraction of its convex hull. This parameter sets a lower bound, "
+			 "less full shapes will be rejected.",
+                         0, jevois::Range<int>(1, 100), ParamCateg);
+
+//! Parameter \relates FirstVision
+JEVOIS_DECLARE_PARAMETER(fillratio_max, int, "Max fill ratio of the convex hull (percent). Lower values mean your shape "
 			 "occupies a smaller fraction of its convex hull. This parameter sets an upper bound, "
 			 "fuller shapes will be rejected.",
-                         50, jevois::Range<int>(1, 100), ParamCateg);
+                         100, jevois::Range<int>(1, 100), ParamCateg);
 
 //! Parameter \relates FirstVision
 JEVOIS_DECLARE_PARAMETER(erodesize, size_t, "Erosion structuring element size (pixels), or 0 for no erosion",
@@ -83,7 +90,7 @@ JEVOIS_DECLARE_PARAMETER(erodesize, size_t, "Erosion structuring element size (p
 
 //! Parameter \relates FirstVision
 JEVOIS_DECLARE_PARAMETER(dilatesize, size_t, "Dilation structuring element size (pixels), or 0 for no dilation",
-                         4, ParamCateg);
+                         2, ParamCateg);
 
 //! Parameter \relates FirstVision
 JEVOIS_DECLARE_PARAMETER(epsilon, double, "Shape smoothing factor (higher for smoother). Shape smoothing is applied "
@@ -91,49 +98,12 @@ JEVOIS_DECLARE_PARAMETER(epsilon, double, "Shape smoothing factor (higher for sm
                          0.015, jevois::Range<double>(0.001, 0.999), ParamCateg);
 
 //! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(debug, bool, "Show contours of all object candidates if true",
-                         false, ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(threads, size_t, "Number of parallel vision processing threads. Thread 0 uses the HSV values "
-			 "provided by user parameters; thread 1 broadens that fixed range a bit; threads 2-3 use a "
-			 "narrow and broader learned HSV window over time",
-                         4, jevois::Range<size_t>(2, 4), ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(showthread, size_t, "Thread number that is used to display HSV-thresholded image",
-                         0, jevois::Range<size_t>(0, 3), ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(ethresh, double, "Shape error threshold (lower is stricter for exact shape)",
+JEVOIS_DECLARE_PARAMETER(shapeerror_max, double, "Shape error threshold (lower is stricter for exact shape)",
                          900.0, jevois::Range<double>(0.01, 1000.0), ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(dopose, bool, "Compute (and show) 6D object pose, requires a valid camera calibration. "
-			 "When dopose is true, 3D serial messages are sent out, otherwise 2D serial messages.",
-			 true, ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(camparams, std::string, "File stem of camera parameters, or empty. Camera resolution "
-			 "will be appended, as well as a .yaml extension. For example, specifying 'calibration' "
-			 "here and running the camera sensor at 320x240 will attempt to load "
-			 "calibration320x240.yaml from within directory " JEVOIS_SHARE_PATH "/camera/",
-			 "calibration", ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(iou, double, "Intersection-over-union ratio over which duplicates are eliminated",
-                         0.3, jevois::Range<double>(0.01, 0.99), ParamCateg);
 
 //! Parameter \relates FirstVision
 JEVOIS_DECLARE_PARAMETER(objsize, cv::Size_<float>, "Object size (in meters)",
                          cv::Size_<float>(0.28F, 0.175F), ParamCateg);
-
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(margin, size_t, "Margin from from frame borders (pixels). If any corner of a detected shape "
-			 "gets closer than the margin to the frame borders, the shape will be rejected. This is to "
-			 "avoid possibly bogus 6D pose estimation when the shape starts getting truncated as it "
-			 "partially exits the camera's field of view.",
-                         5, ParamCateg);
 
 //! Simple color-based detection of a U-shaped object for FIRST Robotics
 /*! This module isolates pixels within a given HSV range (hue, saturation, and value of color pixels), does some
@@ -285,12 +255,12 @@ JEVOIS_DECLARE_PARAMETER(margin, size_t, "Margin from from frame borders (pixels
 
     @author Laurent Itti
 
-    @videomapping YUYV 176 194 120.0 YUYV 176 144 120.0 JeVois FirstVision_Edit
-    @videomapping YUYV 352 194 120.0 YUYV 176 144 120.0 JeVois FirstVision_Edit
-    @videomapping YUYV 320 290 60.0 YUYV 320 240 60.0 JeVois FirstVision_Edit
-    @videomapping YUYV 640 290 60.0 YUYV 320 240 60.0 JeVois FirstVision_Edit
-    @videomapping NONE 0 0 0.0 YUYV 320 240 60.0 JeVois FirstVision_Edit
-    @videomapping NONE 0 0 0.0 YUYV 176 144 120.0 JeVois FirstVision_Edit
+    @videomapping YUYV 176 194 120.0 YUYV 176 144 120.0 JeVois FirstVision_Simplified
+    @videomapping YUYV 352 194 120.0 YUYV 176 144 120.0 JeVois FirstVision_Simplified
+    @videomapping YUYV 320 290 60.0 YUYV 320 240 60.0 JeVois FirstVision_Simplified
+    @videomapping YUYV 640 290 60.0 YUYV 320 240 60.0 JeVois FirstVision_Simplified
+    @videomapping NONE 0 0 0.0 YUYV 320 240 60.0 JeVois FirstVision_Simplified
+    @videomapping NONE 0 0 0.0 YUYV 176 144 120.0 JeVois FirstVision_Simplified
     @email itti\@usc.edu
     @address University of Southern California, HNB-07A, 3641 Watt Way, Los Angeles, CA 90089-2520, USA
     @copyright Copyright (C) 2017 by Laurent Itti, iLab and the University of Southern California
@@ -301,824 +271,621 @@ JEVOIS_DECLARE_PARAMETER(margin, size_t, "Margin from from frame borders (pixels
     @distribution Unrestricted
     @restrictions None
     \ingroup modules */
-class FirstVision_Edit : public jevois::StdModule,
-		    public jevois::Parameter<hcue, hsigma, scue, ssigma, vcue, vsigma, maxnumobj, hullarea, hullfill, erodesize,
-					     dilatesize, epsilon, debug, threads, showthread, ethresh,
-					     dopose, camparams, iou, objsize, margin>
+class FirstVision_Simplified : public jevois::StdModule,
+		    public jevois::Parameter<hmin, hmax, houter, smin, smax, vmin, vmax, fillratio_max, fillratio_min, erodesize,
+					     dilatesize, epsilon, shapeerror_max, iou, objsize>
 {
   protected:
     cv::Mat itsCamMatrix; //!< Our camera matrix
     cv::Mat itsDistCoeffs; //!< Our camera distortion coefficients
     bool itsCueChanged = true; //!< True when users change ranges
 
-    void onParamChange(hcue const & param, unsigned char const & newval) { itsCueChanged = true; }
-    void onParamChange(scue const & param, unsigned char const & newval) { itsCueChanged = true; }
-    void onParamChange(vcue const & param, unsigned char const & newval) { itsCueChanged = true; }
-    void onParamChange(hsigma const & param, unsigned char const & newval) { itsCueChanged = true; }
-    void onParamChange(ssigma const & param, unsigned char const & newval) { itsCueChanged = true; }
-    void onParamChange(vsigma const & param, unsigned char const & newval) { itsCueChanged = true; }    
+    void onParamChange(hmin const & param, unsigned char const & newval) { itsCueChanged = true; }
+    void onParamChange(hmax const & param, unsigned char const & newval) { itsCueChanged = true; }
+    void onParamChange(smin const & param, unsigned char const & newval) { itsCueChanged = true; }
+    void onParamChange(smax const & param, unsigned char const & newval) { itsCueChanged = true; }
+    void onParamChange(vmin const & param, unsigned char const & newval) { itsCueChanged = true; }
+    void onParamChange(vmax const & param, unsigned char const & newval) { itsCueChanged = true; }
+    void onParamChange(houter const & param, bool const & newval) { itsCueChanged = true; }
 
     // ####################################################################################################
-    //! Helper struct for an HSV range triplet, where each range is specified as a mean and sigma:
-    /*! Note that sigma is used differently for H, S, and V, under the assumption that we want to track a bright target:
-        For H, the range is [mean-sigma .. mean+sigma]. For S and V, the range is [mean-sigma .. 255]. See rmin() and
-        rmax() for details. */
+    //! Helper struct for an HSV range triplet, where each range is specified as a min and max:
+    /*! if outer is set to true, then  */
     struct hsvcue
     {
-	//! Constructor
-	hsvcue(unsigned char h, unsigned char s, unsigned char v) : muh(h), sih(30), mus(s), sis(20), muv(v), siv(20)
-	{ fix(); }
-	
-	//! Constructor
-	hsvcue(unsigned char h, unsigned char hsig, unsigned char s, unsigned char ssig,
-	       unsigned char v, unsigned char vsig) : muh(h), sih(hsig), mus(s), sis(ssig), muv(v), siv(vsig)
-	{ fix(); }
-	
-	//! Fix ranges so they don't go out of bounds
-	void fix()
-	{
-	  muh = std::min(179.0F, std::max(1.0F, muh)); sih = std::max(1.0F, std::min(sih, 360.0F));
-	  mus = std::min(254.0F, std::max(1.0F, mus)); sis = std::max(1.0F, std::min(sis, 512.0F));
-	  muv = std::min(254.0F, std::max(1.0F, muv)); siv = std::max(1.0F, std::min(siv, 512.0F));
-	}
-	
-	//! Get minimum triplet for use by cv::inRange()
-	cv::Scalar rmin() const
-	{ return cv::Scalar(std::max(0.0F, muh - sih), std::max(0.0F, mus - sis), std::max(0.0F, muv - siv)); }
+      //! Constructor
+      hsvcue(unsigned char _h_min, unsigned char _h_max, unsigned char _s_min, unsigned char _s_max,
+            unsigned char _v_min, unsigned char _v_max, bool _h_outer) : h_min(_h_min), h_max(_h_max), s_min(_s_min),
+            s_max(_s_max), v_min(_v_min), v_max(_v_max), h_outer(_h_outer)
+      { fix(); }
+      
+      //! Fix ranges so they don't go out of bounds
+      void fix()
+      {
+        h_min = std::min(179, std::max(0, h_min));
+        h_max = std::min(179, std::max(0, h_max));
+        s_min = std::min(255, std::max(0, s_min));
+        s_max = std::min(255, std::max(0, s_max));
+        v_min = std::min(255, std::max(0, v_min));
+        v_max = std::min(255, std::max(0, v_max));
 
-	//! Get maximum triplet for use by cv::inRange()
-	cv::Scalar rmax() const
-	{ return cv::Scalar(std::min(179.0F, muh + sih), 255, 255); }
-	
-	// Make function to determine if the H values overlap (i.e. is red)
-	bool overlaps() const {
-	  int minh = int(muh-sih) % 180; 
-	  if (minh < 0) { minh = 180.0F + minh; } // Puts it into the range of 0 to 180
-	  int maxh = int(muh+sih) % 180;
-	  
-	  // If it has overlapped
-	  if (minh > maxh) { return true; }
-	  else { return false; }
-	}
+        if(h_min > h_max) { tmp = h_min; h_min = h_max; h_max = tmp; }
+        if(s_min > s_max) { tmp = s_min; s_min = s_max; s_max = tmp; }
+        if(v_min > v_max) { tmp = v_min; v_min = v_max; v_max = tmp; }
+      }
+      
+      //! Get minimum triplet for use by cv::inRange()
+      cv::Scalar rmin() const
+      { return cv::Scalar(h_min, s_min, v_min); }
 
-	  
-	// Make function to get the overlapped lower limit
-	cv::Scalar overlap_lower() const
-	{ return cv::Scalar(float(int(muh+sih) % 180), 255, 255); }
+      //! Get maximum triplet for use by cv::inRange()
+      cv::Scalar rmax() const
+      { return cv::Scalar(h_max, s_max, v_max); }
+      
+      int h_min, h_max; //!< Min and max for H
+      int s_min, s_max; //!< Min and max for S
+      int v_min, v_max; //!< Min and max for V
+      bool h_outer; //!< Exclusive range for H
 
-	// Function to get the overlapped upper limit
-	cv::Scalar overlap_upper() const { 
-	  int minh = int(muh-sih) % 180; 
-	  if (minh < 0) { minh = 180.0F + minh; } // Puts it into the range of 0 to 180
-	  return cv::Scalar(float(minh), std::max(0.0F, mus - sis), std::max(0.0F, muv - siv));
-	}
-
-	float muh, sih; //!< Mean and sigma for H
-	float mus, sis; //!< Mean and sigma for S
-	float muv, siv; //!< Mean and sigma for V
     };
-    
+
     std::vector<hsvcue> itsHSV;
 
     // ####################################################################################################
     //! Helper struct for a detected object
     struct detection
     {
-	std::vector<cv::Point> contour; //!< The full detailed contour
-	std::vector<cv::Point> approx;  //!< Smoothed approximation of the contour
-	std::vector<cv::Point> hull;    //!< Convex hull of the contour
-	size_t threadnum;               //!< Thread number that detected this object
-	float serr;                     //!< Shape error score (higher for rougher contours with defects)
+      std::vector<cv::Point> contour; //!< The full detailed contour
+      std::vector<cv::Point> approx;  //!< Smoothed approximation of the contour
+      std::vector<cv::Point> hull;    //!< Convex hull of the contour
+      float serr;                     //!< Shape error score (higher for rougher contours with defects)
+      float fill_ratio;               //!< Area fill ratio
     };
 
     //! Our detections, combined across all threads
     std::vector<detection> itsDetections;
     std::mutex itsDetMtx;
 
-    //! Kalman filters to learn and adapt HSV windows over time
-    std::shared_ptr<Kalman1D> itsKalH, itsKalS, itsKalV;
+    // ####################################################################################################
 
     //! Erosion and dilation kernels shared across all detect threads
     cv::Mat itsErodeElement, itsDilateElement;
     
+
+    // Delete
+
     // ####################################################################################################
     //! ParallelLoopBody class for the parallelization of the single markers pose estimation
     /*! Derived from opencv_contrib ArUco module, it's just a simple solvePnP inside. */
     class SinglePoseEstimationParallel : public cv::ParallelLoopBody
     {
       public:
-	SinglePoseEstimationParallel(cv::Mat & _objPoints, cv::InputArrayOfArrays _corners,
-				     cv::InputArray _cameraMatrix, cv::InputArray _distCoeffs,
-				     cv::Mat & _rvecs, cv::Mat & _tvecs) :
-	    objPoints(_objPoints), corners(_corners), cameraMatrix(_cameraMatrix),
-	    distCoeffs(_distCoeffs), rvecs(_rvecs), tvecs(_tvecs)
-	{ }
+        SinglePoseEstimationParallel(cv::Mat & _objPoints, cv::InputArrayOfArrays _corners,
+                  cv::InputArray _cameraMatrix, cv::InputArray _distCoeffs,
+                  cv::Mat & _rvecs, cv::Mat & _tvecs) :
+            objPoints(_objPoints), corners(_corners), cameraMatrix(_cameraMatrix),
+            distCoeffs(_distCoeffs), rvecs(_rvecs), tvecs(_tvecs) { }
 	
-	void operator()(cv::Range const & range) const
-	{
-	  int const begin = range.start;
-	  int const end = range.end;
-	  
-	  for (int i = begin; i < end; ++i)
-	    cv::solvePnP(objPoints, corners.getMat(i), cameraMatrix, distCoeffs,
-			 rvecs.at<cv::Vec3d>(i), tvecs.at<cv::Vec3d>(i));
-	}
+      void operator()(cv::Range const & range) const
+      {
+        int const begin = range.start;
+        int const end = range.end;
+        
+        for (int i = begin; i < end; ++i)
+          cv::solvePnP(objPoints, corners.getMat(i), cameraMatrix, distCoeffs,
+          rvecs.at<cv::Vec3d>(i), tvecs.at<cv::Vec3d>(i));
+      }
 	
       private:
-	cv::Mat & objPoints;
-	cv::InputArrayOfArrays corners;
-	cv::InputArray cameraMatrix, distCoeffs;
-	cv::Mat & rvecs, tvecs;
+        cv::Mat & objPoints;
+        cv::InputArrayOfArrays corners;
+        cv::InputArray cameraMatrix, distCoeffs;
+        cv::Mat & rvecs, tvecs;
     };
 
+
+
+    // Delete
+
+
+
+
     // ####################################################################################################
     // ####################################################################################################
     // ####################################################################################################
 
-  public:
-    // ####################################################################################################
-    //! Constructor
-    FirstVision_Edit(std::string const & instance) : jevois::StdModule(instance)
-    {
-      itsKalH = addSubComponent<Kalman1D>("kalH");
-      itsKalS = addSubComponent<Kalman1D>("kalS");
-      itsKalV = addSubComponent<Kalman1D>("kalV");
-    }
-    
-    // ####################################################################################################
-    //! Virtual destructor for safe inheritance
-    virtual ~FirstVision_Edit() { }
-
-    // ####################################################################################################
-    //! Estimate 6D pose of detected objects, if dopose parameter is true, otherwise just 2D corners
-    /*! Inspired from the ArUco module of opencv_contrib
-      The corners array is always filled, but rvecs and tvecs only are if dopose is true */
-    void estimatePose(std::vector<std::vector<cv::Point2f> > & corners, cv::OutputArray _rvecs,
-		      cv::OutputArray _tvecs)
-    {
-      auto const osiz = objsize::get();
-      
-      // Get a vector of all our corners so we can map them to 3D and draw them:
-      corners.clear();
-      for (detection const & d : itsDetections)
+    public:
+      // ####################################################################################################
+      //! Constructor
+      FirstVision_Simplified(std::string const & instance) : jevois::StdModule(instance)
       {
-        corners.push_back(std::vector<cv::Point2f>());
-        std::vector<cv::Point2f> & v = corners.back();
-        for (auto const & p : d.hull) v.push_back(cv::Point2f(p));
+
       }
-      
-      if (dopose::get())
+    
+      // ####################################################################################################
+      //! Virtual destructor for safe inheritance
+      virtual ~FirstVision_Simplified() { }
+
+      // ####################################################################################################
+      //! Estimate 6D pose of detected objects, if dopose parameter is true, otherwise just 2D corners
+      /*! Inspired from the ArUco module of opencv_contrib
+        The corners array is always filled, but rvecs and tvecs only are if dopose is true */
+      void estimatePose(std::vector<std::vector<cv::Point2f> > & corners, cv::OutputArray _rvecs,
+            cv::OutputArray _tvecs)
       {
-        // set coordinate system in the middle of the object, with Z pointing out
-        cv::Mat objPoints(4, 1, CV_32FC3);
-        objPoints.ptr< cv::Vec3f >(0)[0] = cv::Vec3f(-osiz.width * 0.5F, -osiz.height * 0.5F, 0);
-        objPoints.ptr< cv::Vec3f >(0)[1] = cv::Vec3f(-osiz.width * 0.5F, osiz.height * 0.5F, 0);
-        objPoints.ptr< cv::Vec3f >(0)[2] = cv::Vec3f(osiz.width * 0.5F, osiz.height * 0.5F, 0);
-        objPoints.ptr< cv::Vec3f >(0)[3] = cv::Vec3f(osiz.width * 0.5F, -osiz.height * 0.5F, 0);
+        auto const osiz = objsize::get();
         
-        int nobj = (int)corners.size();
-        _rvecs.create(nobj, 1, CV_64FC3); _tvecs.create(nobj, 1, CV_64FC3);
-        cv::Mat rvecs = _rvecs.getMat(), tvecs = _tvecs.getMat();
-        cv::parallel_for_(cv::Range(0, nobj), SinglePoseEstimationParallel(objPoints, corners, itsCamMatrix,
-                                                                           itsDistCoeffs, rvecs, tvecs));
-      }
-    }
-
-    // ####################################################################################################
-    //! Load camera calibration parameters
-    void loadCameraCalibration(unsigned int w, unsigned int h)
-    {
-      camparams::freeze();
-      
-      std::string const cpf = std::string(JEVOIS_SHARE_PATH) + "/camera/" + camparams::get() +
-        std::to_string(w) + 'x' + std::to_string(h) + ".yaml";
-      
-      cv::FileStorage fs(cpf, cv::FileStorage::READ);
-      if (fs.isOpened())
-      {
-        fs["camera_matrix"] >> itsCamMatrix;
-        fs["distortion_coefficients"] >> itsDistCoeffs;
-        LINFO("Loaded camera calibration from " << cpf);
-      }
-      else LFATAL("Failed to read camera parameters from file [" << cpf << "]");
-    }
-    
-    // ####################################################################################################
-    //! HSV object detector, we run several of those in parallel with different hsvcue settings
-    void detect(cv::Mat const & imghsv, size_t tnum, int dispx = 3, int dispy = 242, jevois::RawImage *outimg = nullptr)
-    {
-      // Threshold the HSV image to only keep pixels within the desired HSV range:
-      cv::Mat imgth;
-      hsvcue const & hsv = itsHSV[tnum]; 
-      std::string str;      
-
-      if (hsv.overlaps()) {
-
-	cv::Scalar rlower_min = hsv.rmin();
-	rlower_min.val[0] = 0;
-	cv::Scalar const rlower_max = hsv.overlap_lower();
-	
-	cv::Scalar const rupper_min = hsv.overlap_upper();
-	cv::Scalar const rupper_max = cv::Scalar(180, 255, 255);	
-
-	cv::Mat imgth_lower; cv::Mat imgth_upper;
-	cv::inRange(imghsv, rlower_min, rlower_max, imgth_lower);
-	cv::inRange(imghsv, rupper_min, rupper_max, imgth_upper);
-
-	cv::bitwise_or(imgth_lower, imgth_upper, imgth);
-	str = jevois::sformat("T%zu: H=%03d-%03d OUTER S=%03d-%03d V=%03d-%03d ", tnum, int(rlower_max.val[0]),
-                                        	int(rupper_min.val[0]), int(rupper_min.val[1]), int(rupper_max.val[1]),
-                                        	int(rupper_min.val[2]), int(rupper_max.val[2]));
-      }
-
-      else {
-     	cv::Scalar const rmin = hsv.rmin(), rmax = hsv.rmax();
-        cv::inRange(imghsv, rmin, rmax, imgth);
-	str = jevois::sformat("T%zu: H=%03d-%03d S=%03d-%03d V=%03d-%03d ", tnum, int(rmin.val[0]),
-                                        	int(rmax.val[0]), int(rmin.val[1]), int(rmax.val[1]),
-                                        	int(rmin.val[2]), int(rmax.val[2]));
-      }
-
-      // Apply morphological operations to cleanup the image noise:
-      if (itsErodeElement.empty() == false) cv::erode(imgth, imgth, itsErodeElement);
-      if (itsDilateElement.empty() == false) cv::dilate(imgth, imgth, itsDilateElement);
-      
-      // Detect objects by finding contours:
-      std::vector<std::vector<cv::Point> > contours; std::vector<cv::Vec4i> hierarchy;
-      cv::findContours(imgth, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
-      str += jevois::sformat("N=%03d ", hierarchy.size());
-
-      double const epsi = epsilon::get();
-      int const m = margin::get();
-
-      // Display any results requested by the users:
-      // Moved this part around --> allows us to draw things individually for each contour
-      if (outimg && outimg->valid())
-      {
-        if (tnum == showthread::get() && outimg->width == 2 * imgth.cols) {
-          jevois::rawimage::pasteGreyToYUYV(imgth, *outimg, imgth.cols, 0);
+        // Get a vector of all our corners so we can map them to 3D and draw them:
+        corners.clear();
+        for (detection const & d : itsDetections)
+        {
+          corners.push_back(std::vector<cv::Point2f>());
+          std::vector<cv::Point2f> & v = corners.back();
+          for (auto const & p : d.hull) v.push_back(cv::Point2f(p));
+        }
+        
+        if (dopose::get())
+        {
+          // set coordinate system in the middle of the object, with Z pointing out
+          cv::Mat objPoints(4, 1, CV_32FC3);
+          objPoints.ptr< cv::Vec3f >(0)[0] = cv::Vec3f(-osiz.width * 0.5F, -osiz.height * 0.5F, 0);
+          objPoints.ptr< cv::Vec3f >(0)[1] = cv::Vec3f(-osiz.width * 0.5F, osiz.height * 0.5F, 0);
+          objPoints.ptr< cv::Vec3f >(0)[2] = cv::Vec3f(osiz.width * 0.5F, osiz.height * 0.5F, 0);
+          objPoints.ptr< cv::Vec3f >(0)[3] = cv::Vec3f(osiz.width * 0.5F, -osiz.height * 0.5F, 0);
+          
+          int nobj = (int)corners.size();
+          _rvecs.create(nobj, 1, CV_64FC3); _tvecs.create(nobj, 1, CV_64FC3);
+          cv::Mat rvecs = _rvecs.getMat(), tvecs = _tvecs.getMat();
+          cv::parallel_for_(cv::Range(0, nobj), SinglePoseEstimationParallel(objPoints, corners, itsCamMatrix,
+                                                                            itsDistCoeffs, rvecs, tvecs));
         }
       }
 
-      
-      // Identify the "good" objects:
-      std::string str2, beststr2;
-      if (hierarchy.size() > 0 && hierarchy.size() <= maxnumobj::get())
+      // ####################################################################################################
+      //! Load camera calibration parameters
+      void loadCameraCalibration(unsigned int w, unsigned int h)
       {
-	// Goes to the next index of the same hierarchy
-	// Changed to only select the countours with at least one child contour
-        for (int index = 0; index >= 0; index = hierarchy[index][0])
+        camparams::freeze();
+        
+        std::string const cpf = std::string(JEVOIS_SHARE_PATH) + "/camera/" + camparams::get() +
+          std::to_string(w) + 'x' + std::to_string(h) + ".yaml";
+        
+        cv::FileStorage fs(cpf, cv::FileStorage::READ);
+        if (fs.isOpened())
         {
-	  // Check that this contour has a child contour
-	  if (hierarchy[index][2] >= 0) {
+          fs["camera_matrix"] >> itsCamMatrix;
+          fs["distortion_coefficients"] >> itsDistCoeffs;
+          LINFO("Loaded camera calibration from " << cpf);
+        }
+        else LFATAL("Failed to read camera parameters from file [" << cpf << "]");
+      }
+      
+      // ####################################################################################################
+      //! HSV object detector, we run several of those in parallel with different hsvcue settings
+      void detect(cv::Mat const & imghsv, hsvcue const & hsv, jevois::RawImage *outimg = nullptr)
+      {
+        std::string str = "";
 
-          // Keep track of our best detection so far:
-          if (str2.length() > beststr2.length()) beststr2 = str2;
-          str2.clear();
-          
-          // Let's examine this contour:
-          std::vector<cv::Point> const & c = contours[index];
-          detection d;
+        // Apply gaussian filter
 
-	  // Examine the child contour
-	  std::vector<cv::Point> const & c_child = contours[hierarchy[index][2]];
-          
-          // Compute contour area:
-          double const area = cv::contourArea(c, false);
-	  double const area_child = cv::contourArea(c_child, false);
-	  double const area_diff = area - area_child;
-          
-          // Compute convex hull:
-          std::vector<cv::Point> rawhull;
-          cv::convexHull(c, rawhull, true);  // true --> clockwise
-          double const rawhullperi = cv::arcLength(rawhull, true);
-          cv::approxPolyDP(rawhull, d.hull, epsi * rawhullperi * 3.0, true);      
 
-          // Is it the right shape?
-          if (d.hull.size() != 4) continue;  // 4 vertices for the rectangular convex outline (shows as a trapezoid)
-          str2 += "H"; // Hull is quadrilateral
-          
-          // double const huarea = cv::contourArea(d.hull, false);
-	  // str2 += std::to_string(area); // area within contour
-          // if ( ! hullarea::get().contains(int(huarea + 0.4999))) continue;
-	  // if ( ! (hullarea::get().min() > int(huarea + 0.4999))) continue;
-          // str2 += "A"; // Hull area ok
+        // Threshold the HSV image to only keep pixels within the desired HSV range:
+        cv::Mat imgth;     
 
-	  // str2 += std::to_string(huarea); // area within hull
-          
-          // int const hufill = int(area / huarea * 100.0 + 0.4999);
-	  int const hufill = int(area_diff / area * 100.0 + 0.4999);
-	  str2 += std::to_string(hufill); // fill ratio
-          if (hufill > hullfill::get()) continue;
-          str2 += "F"; // Fill is ok          
+        if (hsv.h_outer) {
+          cv::Scalar rmin = hsv.rmin();
+          cv::Scalar rmax = hsv.rmax();
 
-          // Check object shape:
-          // double const peri = cv::arcLength(c, true);
-          // cv::approxPolyDP(c, d.approx, epsi * peri, true);
-          // if (d.approx.size() < 7 || d.approx.size() > 9) continue;  // 8 vertices for a U shape
-          // str2 += "S"; // Shape is ok
-          
-          // Compute contour serr:
-          // d.serr = 100.0 * cv::matchShapes(c, d.approx, cv::CONTOURS_MATCH_I1, 0.0);
-	  d.serr = 100.0 * cv::matchShapes(c, d.hull, cv::CONTOURS_MATCH_I1, 0.0);
-	  // str2 += std::to_string(d.serr); // fill ratio
-          if (d.serr > ethresh::get()) continue;
-          str2 += "E"; // Shape error is ok
-          
-          // Reject the shape if any of its vertices gets within the margin of the image bounds. This is to avoid
-          // getting grossly incorrect 6D pose estimates as the shape starts getting truncated as it partially exits the
-          // camera field of view:
-          bool reject = false;
-          for (int i = 0; i < c.size(); ++i)
-            if (c[i].x < m || c[i].x >= imghsv.cols - m || c[i].y < m || c[i].y >= imghsv.rows - m)
-            { reject = true; break; }
-          if (reject) continue;
-          str2 += "M"; // Margin ok
-          
-          // Re-order the 4 points in the hull if needed: In the pose estimation code, we will assume vertices ordered
-          // as follows:
-          //
-          //    0|        |3
-          //     |        |
-          //     |        |
-          //    1----------2
-          
-          // v10+v23 should be pointing outward the U more than v03+v12 is:
-          // std::complex<float> v10p23(float(d.hull[0].x - d.hull[1].x + d.hull[3].x - d.hull[2].x),
-          //                            float(d.hull[0].y - d.hull[1].y + d.hull[3].y - d.hull[2].y));
-          // float const len10p23 = std::abs(v10p23);
-          // std::complex<float> v03p12(float(d.hull[3].x - d.hull[0].x + d.hull[2].x - d.hull[1].x),
-          //                            float(d.hull[3].y - d.hull[0].y + d.hull[2].y - d.hull[1].y));
-          // float const len03p12 = std::abs(v03p12);
-          
-	  
+          // [left_min, left_max] || [right_min, right_max]
+          cv::Scalar left_min = rmin; left_min[0] = 0; // Need to set the min h to zero because of the overlap
+          cv::Scalar left_max = rmax; left_max[0] = rmin[0];
+          cv::Scalar right_min = rmin; right_max[0] = rmax[0];
+          cv::Scalar right_max = rmax; right_max[0] = 179;
 
-          // Vector from centroid of U shape to centroid of its hull should also point outward of the U:
-          // cv::Moments const momC = cv::moments(c);
-          // cv::Moments const momH = cv::moments(d.hull);
-          // std::complex<float> vCH(momH.m10 / momH.m00 - momC.m10 / momC.m00, momH.m01 / momH.m00 - momC.m01 / momC.m00);
-          // float const lenCH = std::abs(vCH);
-          
-          // if (len10p23 < 0.1F || len03p12 < 0.1F || lenCH < 0.1F) continue;
-          // str2 += "V"; // Shape vectors ok
-          
-          // float const good = (v10p23.real() * vCH.real() + v10p23.imag() * vCH.imag()) / (len10p23 * lenCH);
-          // float const bad = (v03p12.real() * vCH.real() + v03p12.imag() * vCH.imag()) / (len03p12 * lenCH);
-          
-	  // Order the points such that 
+          // H: 0-179, S: 0-255, V:0-255
+          cv::Mat imgth_lower; cv::Mat imgth_upper;
+          cv::inRange(imghsv, left_min, left_max, imgth_lower);
+          cv::inRange(imghsv, right_min, right_max, imgth_upper);
+          cv::bitwise_or(imgth_lower, imgth_upper, imgth);
+        }
+        else {
+          cv::Scalar const rmin = hsv.rmin(), rmax = hsv.rmax();
+          cv::inRange(imghsv, rmin, rmax, imgth);
+        }
 
-          // We reject upside-down detections as those are likely to be spurious:
-          // if (vCH.imag() >= -2.0F) continue;
-          // str2 += "U"; // U shape is upright
+        // Apply morphological operations to cleanup the image noise:
+        if (itsErodeElement.empty() == false) cv::erode(imgth, imgth, itsErodeElement);
+        if (itsDilateElement.empty() == false) cv::dilate(imgth, imgth, itsDilateElement);
+        
+        // Detect objects by finding contours:
+        std::vector<std::vector<cv::Point> > contours;
+        std::vector<cv::Vec4i> hierarchy;
+        cv::findContours(imgth, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
+        str += jevois::sformat("N=%03d ", hierarchy.size());
 
-	  // It appears that the first point in the hull is the left-most point.
-	  // Make the point which is most upper and left the starting point
-	  // theta = atan(rise/run)
-	  // calculate centroid of all the vertices:
-	  int x = 0; int y = 0;
-	  for (int i = 0; i < d.hull.size(); i++) {
-	    x += d.hull[i].x;
-	    y += d.hull[i].y;
-	  }
-	  
-	  x = int(x/d.hull.size());
-	  y = int(y/d.hull.size());
+        // Copy thresholded image to the output image
+        if (outimg && outimg->valid())
+        {
+          if (outimg->width == 2 * imgth.cols) {
+            jevois::rawimage::pasteGreyToYUYV(imgth, *outimg, imgth.cols, 0);
+          }
+        }
+        
+        int num_contours_with_child = 0;
 
-	  int first_x = d.hull[0].x - x;
-	  int first_y = d.hull[0].y - y;
+        // Identify the "good" objects:
+        std::string str_debug, str_flags, beststr_flag, beststr_debug;
+        if (hierarchy.size() > 0 && hierarchy.size())
+        {
+          // Goes to the next index of the same hierarchy
+          // Changed to only select the countours with at least one child contour
+          for (int index = 0; index >= 0; index = hierarchy[index][0])
+          {
+            // Check that this contour has a child contour
+            if (hierarchy[index][2] >= 0) {
 
-	  int last_x = d.hull.back().x - x;
-	  int last_y = d.hull.back().y - y;
+              // Increment the counter
+              num_contours_with_child += 1;
 
-	  // float tanLast = (d.hull.back().y - y)/(d.hull.back().x - x);
-	  // float tanFirst = (d.hull[0].y - y)/(d.hull[0].x - x);
-	  // Mode the last element into the first position
-	  if (last_x < 0 && last_y < first_y) {
-	    d.hull.insert(d.hull.begin(), d.hull.back()); d.hull.pop_back();
-	  }
+              // Keep track of our best detection so far:
+              str_flags.clear();
+              str_debug.clear();
+              
+              // Let's examine the contour and child
+              std::vector<cv::Point> const & c_parent = contours[index];
+              std::vector<cv::Point> const & c_child = contours[hierarchy[index][2]];
+              
+              // Compute convex hull:
+              std::vector<cv::Point> hull_child, hull_parent;
+              cv::convexHull(c_child, hull_child, true);  // true --> clockwise
+              cv::convexHull(c_parent, hull_parent, true);  // true --> clockwise
 
-	  // Added by me:
-	  // For each detected contour, draw things separately --> gives greater control over what we show
-      	  if (outimg && outimg->valid())
-      	  {
-	    if (tnum == showthread::get() && outimg->width == 2 * imgth.cols) {
+              // Is it the right shape?
+              str_debug += "HP=" + std::to_string(hull_parent.size);
+              str_debug += "HC=" + std::to_string(hull_child.size);
+              if (hull_child.size() != 4 || hull_parent.size() != 4) continue;
+              str_flags += "H,"; // Hull is quadrilateral
 
-	    cv::Mat outuc2(outimg->height, outimg->width, CV_8UC2, outimg->pixelsw<unsigned char>());
-	    // Draw this contour
-	    // std::vector<std::vector<cv::Point> > contour_temp; contour_temp.push_back(c); // An array of contours but with only one contour
-            // cv::drawContours(outuc2, contour_temp, -1, jevois::yuyv::LightGreen, 2, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
+              // Look at the difference between the convex hull and the contour
+              // Look at the difference between the two hulls or between the two contours
 
-	    // std::vector<std::vector<cv::Point> > rawhull_temp; rawhull_temp.push_back(rawhull); // An array of contours but with only one contour
-	    // cv::drawContours(outuc2, rawhull_temp, -1, jevois::yuyv::LightGreen, 2, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
+              // Compute contour area:
+              double const area_parent = cv::contourArea(c_parent, false);
+              double const area_child = cv::contourArea(c_child, false);
+              double const area_diff = area_parent - area_child;
+              
+              int const fill_ratio = int(area_diff / area_parent * 100.0 + 0.4999);
+              str_debug += ",F=" + std::to_string(fill_ratio); // fill ratio
+              if (hufill > fillratio_max::get() || hufill < fillratio_min::get()) continue;
+              str_flags += "F,"; // Fill is ok          
 
-	    std::vector<std::vector<cv::Point> > hull_temp; hull_temp.push_back(d.hull); // An array of contours but with only one contour
-	    cv::drawContours(outuc2, hull_temp, -1, jevois::yuyv::LightGreen, 2, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
+              // Compute contour shape error:
+              std::vector<cv::Point> c_approx_child;
+              double const childhullperi = cv::arcLength(c_child, true);
+              cv::approxPolyDP(c_child, c_approx_child, epsilon::get() * childhullperi * 3.0, true);   
+              shape_error = 100.0 * cv::matchShapes(c_approx_child, hull_child, cv::CONTOURS_MATCH_I1, 0.0);
+              str_debug += ",SE=" + std::to_string(shape_error); // fill ratio
+              if (shape_error > shapeerror_max::get()) continue;
+              str_flags += "E,"; // Shape error is ok
+            
+              // This detection is a keeper:
+              str_flags += "OK";
+              
+              // TODO: Copy for now, but change to no copy later
+              detection d;
+              d.contour = c_child;
+              d.approx = c_approx_child;
+              d.hull = hull_child;
+              d.serr = shape_error;
+              d.fill_ratio = fill_ratio;
+              std::lock_guard<std::mutex> _(itsDetMtx);
+              itsDetections.push_back(d);
 
-	    jevois::rawimage::drawCircle(*outimg, d.hull[0].x + imgth.cols, d.hull[0].y, 10,
-                                     2, jevois::yuyv::LightGreen);
+              // Draw the contour for each good detection
+              if (outimg && outimg->valid() && outimg->width == 2 * imgth.cols)
+              {
 
-	    jevois::rawimage::drawCircle(*outimg, d.hull[1].x + imgth.cols, d.hull[1].y, 5,
-                                     2, jevois::yuyv::LightGreen);
+                  // Pointer to the output image
+                  cv::Mat outuc2(outimg->height, outimg->width, CV_8UC2, outimg->pixelsw<unsigned char>());
+                  
+                  // Draw this contour
+                  std::vector<std::vector<cv::Point> > draw_contours; // An array of contours
+                  draw_contours.push_back(d.hull);
+                  draw_contours.push_back(d.contour);
+                  draw_contours.push_back(d.approx);
+                  cv::drawContours(outuc2, hull_temp, 0, jevois::yuyv::LightGreen, 2, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
+                  cv::drawContours(outuc2, hull_temp, 1, jevois::yuyv::MedPurple, 1, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
+                  cv::drawContours(outuc2, hull_temp, 2, jevois::yuyv::MedPurple, 1, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
 
+                  jevois::rawimage::drawCircle(*outimg, d.hull[0].x + imgth.cols, d.hull[0].y, 10,
+                                                2, jevois::yuyv::LightGreen);
+
+                  jevois::rawimage::drawCircle(*outimg, d.hull[1].x + imgth.cols, d.hull[1].y, 5,
+                                                2, jevois::yuyv::LightGreen);
+            
+              }
+            
+              if (str_flag.length() > beststr_flag.length()) {
+                beststr_flag = str_flag;
+                beststr_debug = str_debug;
+              }     
             }
-          }    
+          }
 
-          // Fixup the ordering of the vertices if needed:
-          // if (bad > good) { d.hull.insert(d.hull.begin(), d.hull.back()); d.hull.pop_back(); }
-          
-          // This detection is a keeper:
-          str2 += " OK";
-          d.contour = c;
-          std::lock_guard<std::mutex> _(itsDetMtx);
-          itsDetections.push_back(d);
+          str += jevois::sformat("NC=%03d ", num_contours_with_child);
+
+          // Display any results requested by the users:
+          if (outimg && outimg->valid() && beststr_flag.length())
+          {
+            jevois::rawimage::writeText(*outimg, str+beststr_flag, 3, 242, jevois::yuyv::White);
+            jevois::rawimage::writeText(*outimg, str+beststr_debug, dispx, 242 + 12*2, jevois::yuyv::White);
+          }
 
         }
-        if (str2.length() > beststr2.length()) beststr2 = str2;
-      }
+        
       }
       
-      // Display any results requested by the users:
-      if (outimg && outimg->valid())
+      // ####################################################################################################
+      //! Initialize (e.g., if user changes cue params)
+      void updateHSV()
       {
-        jevois::rawimage::writeText(*outimg, str + beststr2, dispx, dispy + 12*tnum, jevois::yuyv::White);
-
-	// if (tnum == showthread::get() && outimg->width == 2 * imgth.cols) {
-
-	//    cv::Mat outuc2(outimg->height, outimg->width, CV_8UC2, outimg->pixelsw<unsigned char>());
-	    // Draw all contours
-        //    cv::drawContours(outuc2, contours, -1, jevois::yuyv::LightGreen, 2, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
-        // }     
-
-
-      }
-    }
-    
-    // ####################################################################################################
-    //! Initialize (e.g., if user changes cue params) or update our HSV detection ranges
-    void updateHSV(size_t nthreads)
-    {
-      float const spread = 0.2F;
-      
-      if (itsHSV.empty() || itsCueChanged)
-      {
-        // Initialize or reset because of user parameter change:
-        itsHSV.clear(); itsCueChanged = false;
-        for (size_t i = 0; i < nthreads; ++i)
+        float const spread = 0.2F;
+        if (itsHSV.empty() || itsCueChanged)
         {
-          // hsvcue cue(hcue::get(), scue::get(), vcue::get());
-	  hsvcue cue(hcue::get(), hsigma::get(), scue::get(), ssigma::get(), vcue::get(), vsigma::get());
-          cue.sih *= (1.0F + spread * i); cue.sis *= (1.0F + spread * i); cue.siv *= (1.0F + spread * i); 
-          cue.fix();
+          // Initialize or reset because of user parameter change:
+          itsHSV.clear(); itsCueChanged = false;
+          hsvcue cue(hmin::get(), hmax::get(), smin::get(), smax::get(), vmin::get(), vmax::get(), houter::get());
           itsHSV.push_back(cue);
         }
-        if (nthreads > 2)
-        {
-          itsKalH->set(hcue::get()); itsKalH->get();
-          itsKalS->set(scue::get()); itsKalS->get();
-          itsKalV->set(vcue::get()); itsKalV->get();
-        }
       }
-      else
+      
+      // ####################################################################################################
+      //! Learn and update our HSV ranges
+      void learnHSV(size_t nthreads, cv::Mat const & imgbgr, jevois::RawImage *outimg = nullptr)
       {
-        // Kalman update:
-        if (nthreads > 2)
-        {
-          itsHSV[2].muh = itsKalH->get();
-          itsHSV[2].mus = itsKalS->get();
-          itsHSV[2].muv = itsKalV->get();
-          itsHSV[2].fix();
-          for (size_t i = 3; i < itsHSV.size(); ++i)
-          {
-            itsHSV[i] = itsHSV[2];
-            itsHSV[i].sih *= (1.0F + spread * i);
-            itsHSV[i].sis *= (1.0F + spread * i);
-            itsHSV[i].siv *= (1.0F + spread * i); 
-            itsHSV[i].fix();
-          }
-        }
-      }
-    }
-    
-    // ####################################################################################################
-    //! Clean up the detections by eliminating duplicates:
-    void cleanupDetections()
-    {
-      bool keepgoing = true;
-      double const iouth = iou::get();
-
-      while (keepgoing)
-      {
-        // We will stop if we do not eliminate any more objects:
-        keepgoing = false; int delidx = -1;
+        int const w = imgbgr.cols, h = imgbgr.rows;
         
-        // Loop over all pairs of objects:
-        size_t const siz = itsDetections.size();
-        for (size_t i = 0; i < siz; ++i)
+        // Compute the median filtered BGR image in a thread:
+        cv::Mat medimgbgr;
+        auto median_fut = std::async(std::launch::async, [&](){ cv::medianBlur(imgbgr, medimgbgr, 3); } );
+        
+        // Get all the cleaned-up contours:
+        std::vector<std::vector<cv::Point> > contours;
+        for (detection const & d : itsDetections) contours.push_back(d.contour);
+        
+        // If desired, draw all contours:
+        std::future<void> drawc_fut;
+        if (debug::get() && outimg && outimg->valid())
+          drawc_fut = std::async(std::launch::async, [&]() {
+              // We reinterpret the top portion of our YUYV output image as an opencv 8UC2 image:
+              cv::Mat outuc2(outimg->height, outimg->width, CV_8UC2, outimg->pixelsw<unsigned char>());
+              cv::drawContours(outuc2, contours, -1, jevois::yuyv::LightPink, 2);
+            } );
+        
+        // Draw all the filled contours into a binary mask image:
+        cv::Mat mask(h, w, CV_8UC1, (unsigned char)0);
+        cv::drawContours(mask, contours, -1, 255, -1); // last -1 is for filled
+        
+        // Wait until median filter is done:
+        median_fut.get();
+        
+        // Compute mean and std BGR values inside objects:
+        cv::Mat mean, std;
+        cv::meanStdDev(medimgbgr, mean, std, mask);
+        
+        // Convert to HSV:
+        cv::Mat bgrmean(2, 1, CV_8UC3); bgrmean.at<cv::Vec3b>(0, 0) = mean; bgrmean.at<cv::Vec3b>(1, 0) = std;
+        cv::Mat hsvmean; cv::cvtColor(bgrmean, hsvmean, cv::COLOR_BGR2HSV);
+
+        cv::Vec3b hsv = hsvmean.at<cv::Vec3b>(0, 0);
+        int H = hsv.val[0], S = hsv.val[1], V = hsv.val[2];
+
+        cv::Vec3b sighsv = hsvmean.at<cv::Vec3b>(1, 0);
+        int sH = sighsv.val[0], sS = sighsv.val[1], sV = sighsv.val[2];
+        
+        // Set the new measurements:
+        itsKalH->set(H); itsKalS->set(S); itsKalV->set(V);
+        
+        if (nthreads > 2)
         {
-          for (size_t j = 0; j < i; ++j)
+          float const eta = 0.4F;
+          itsHSV[2].sih = (1.0F - eta) * itsHSV[2].sih + eta * sH;
+          itsHSV[2].sis = (1.0F - eta) * itsHSV[2].sis + eta * sS;
+          itsHSV[2].siv = (1.0F - eta) * itsHSV[2].siv + eta * sV;
+          itsHSV[2].fix();
+        }
+        
+        // note: drawc_fut may block us here until it is complete.
+      }
+      
+      
+      // ####################################################################################################
+      //! Update the morphology structuring elements if needed
+      void updateStructuringElements()
+      {
+        int e = erodesize::get();
+        if (e != itsErodeElement.cols)
+        {
+          if (e) itsErodeElement = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(e, e));
+          else itsErodeElement.release();
+        }
+        
+        int d = dilatesize::get();
+        if (d != itsDilateElement.cols)
+        {
+          if (d) itsDilateElement = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(d, d));
+          else itsDilateElement.release();
+        }
+      }
+      
+      // ####################################################################################################
+      //! Processing function, no USB video output
+      virtual void process(jevois::InputFrame && inframe) override
+      {
+        static jevois::Timer timer("processing");
+        
+        // Wait for next available camera image. Any resolution ok:
+        jevois::RawImage inimg = inframe.get(); unsigned int const w = inimg.width, h = inimg.height;
+        
+        timer.start();
+
+        // Load camera calibration if needed:
+        if (itsCamMatrix.empty()) loadCameraCalibration(w, h);
+
+        // Convert input image to BGR24, then to HSV:
+        cv::Mat imgbgr = jevois::rawimage::convertToCvBGR(inimg);
+        cv::Mat imghsv; cv::cvtColor(imgbgr, imghsv, cv::COLOR_BGR2HSV);
+        
+        // Make sure our HSV range parameters are up to date:
+        updateHSV();
+        
+        // Clear any old detections and get ready to parallelize the detection work:
+        itsDetections.clear();
+        updateStructuringElements();
+        
+        // Launch our workers: run nthreads-1 new threads, and last worker in our current thread:
+        // std::vector<std::future<void> > dfut;
+        // for (size_t i = 0; i < nthreads - 1; ++i)
+        //   dfut.push_back(std::async(std::launch::async, [&](size_t tn) { detect(imghsv, tn, 3, h+2); }, i));
+        // detect(imghsv, nthreads - 1, 3, h+2);
+        
+        // // Wait for all threads to complete:
+        // for (auto & f : dfut) try { f.get(); } catch (...) { jevois::warnAndIgnoreException(); }
+        detect(imghsv, itsHSV[0]);
+
+        // Let camera know we are done processing the input image:
+        inframe.done();
+        
+        // Clean up the detections by eliminating duplicates:
+        // cleanupDetections();
+        
+        // Learn the object's HSV value over time:
+        // auto learn_fut = std::async(std::launch::async, [&]() { learnHSV(nthreads, imgbgr); });
+        
+        // Map to 6D (inverse perspective):
+        std::vector<std::vector<cv::Point2f> > corners; std::vector<cv::Vec3d> rvecs, tvecs;
+        estimatePose(corners, rvecs, tvecs);
+
+        // Send all serial messages:
+        // sendAllSerial(w, h, corners, rvecs, tvecs);
+        
+        // Wait for all threads:
+        // try { learn_fut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
+        
+        // Show processing fps:
+        timer.stop();
+      }
+      
+      // ####################################################################################################
+      //! Processing function, with USB video output
+      virtual void process(jevois::InputFrame && inframe, jevois::OutputFrame && outframe) override
+      {
+        static jevois::Timer timer("processing");
+
+        // Wait for next available camera image. Any resolution ok, but require YUYV since we assume it for drawings:
+        jevois::RawImage inimg = inframe.get(); unsigned int const w = inimg.width, h = inimg.height;
+        inimg.require("input", w, h, V4L2_PIX_FMT_YUYV);
+        
+        timer.start();
+
+        // Load camera calibration if needed:
+        if (itsCamMatrix.empty()) loadCameraCalibration(w, h);
+
+        // While we process it, start a thread to wait for output frame and paste the input image into it:
+        jevois::RawImage outimg; // main thread should not use outimg until paste thread is complete
+        auto paste_fut = std::async(std::launch::async, [&]() {
+            outimg = outframe.get();
+            outimg.require("output", outimg.width, h + 50, inimg.fmt);
+      if (outimg.width != w && outimg.width != w * 2) LFATAL("Output image width should be 1x or 2x input width");
+            jevois::rawimage::paste(inimg, outimg, 0, 0);
+            jevois::rawimage::writeText(outimg, "JeVois FIRST Vision", 3, 3, jevois::yuyv::White);
+            jevois::rawimage::drawFilledRect(outimg, 0, h, outimg.width, outimg.height-h, jevois::yuyv::Black);
+          });
+        
+        // Convert input image to BGR24, then to HSV:
+        cv::Mat imgbgr = jevois::rawimage::convertToCvBGR(inimg);
+        cv::Mat imghsv; cv::cvtColor(imgbgr, imghsv, cv::COLOR_BGR2HSV);
+        
+        // Make sure our HSV range parameters are up to date:
+        updateHSV();
+        
+        // Clear any old detections and get ready to parallelize the detection work:
+        itsDetections.clear();
+        updateStructuringElements();
+        
+        // Launch our workers: run nthreads-1 new threads, and last worker in our current thread:
+        // std::vector<std::future<void> > dfut;
+        // for (size_t i = 0; i < nthreads - 1; ++i)
+        //   dfut.push_back(std::async(std::launch::async, [&](size_t tn) { detect(imghsv, tn, 3, h+2, &outimg); }, i));
+        detect(imghsv, itsHSV[0], &outimg);    
+
+        // Wait for all threads to complete:
+        // for (auto & f : dfut) try { f.get(); } catch (...) { jevois::warnAndIgnoreException(); }
+        
+        // Wait for paste to finish up:
+        paste_fut.get();
+        
+        // Let camera know we are done processing the input image:
+        inframe.done();
+        
+        // Clean up the detections by eliminating duplicates:
+        // cleanupDetections();
+
+        // Learn the object's HSV value over time:
+        // auto learn_fut = std::async(std::launch::async, [&]() { learnHSV(nthreads, imgbgr, &outimg); });
+
+        // Map to 6D (inverse perspective):
+        std::vector<std::vector<cv::Point2f> > corners; std::vector<cv::Vec3d> rvecs, tvecs;
+        estimatePose(corners, rvecs, tvecs);
+        
+        // Send all serial messages:
+        // sendAllSerial(w, h, corners, rvecs, tvecs);
+        
+        // Draw all detections in 3D:
+        drawDetections(outimg, corners, rvecs, tvecs);
+        
+        // Show number of detected objects:
+        jevois::rawimage::writeText(outimg, "Detected " + std::to_string(itsDetections.size()) + " objects.",
+                                    w + 3, 3, jevois::yuyv::White);
+        
+        // Wait for all threads:
+        try { learn_fut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
+        
+        // Show processing fps:
+        std::string const & fpscpu = timer.stop();
+        jevois::rawimage::writeText(outimg, fpscpu, 3, h - 13, jevois::yuyv::White);
+        
+        // Send the output image with our processing results to the host over USB:
+        outframe.send();
+      }
+      
+      // ####################################################################################################
+      void drawDetections(jevois::RawImage & outimg, std::vector<std::vector<cv::Point2f> > corners,
+        std::vector<cv::Vec3d> const & rvecs, std::vector<cv::Vec3d> const & tvecs)
+      {
+        auto const osiz = objsize::get(); float const w = osiz.width, h = osiz.height;
+        int nobj = int(corners.size());
+        
+        // This code is like drawDetectedMarkers() in cv::aruco, but for YUYV output image:
+        if (rvecs.empty())
+        {
+          // We are not doing 3D pose estimation. Just draw object outlines in 2D:
+          for (int i = 0; i < nobj; ++i)
           {
-            std::vector<cv::Point> pts = itsDetections[i].hull;
-            for (cv::Point const & p : itsDetections[j].hull) pts.push_back(p);
-            std::vector<cv::Point> hull;
-            cv::convexHull(pts, hull); // FIXME should do a true union! this is just an approximation to it
-            double uarea = cv::contourArea(hull);
-            double iarea = cv::contourArea(itsDetections[i].hull) + cv::contourArea(itsDetections[j].hull) - uarea;
+            std::vector<cv::Point2f> const & obj = corners[i];
             
-            // note: object detection code guarantees non-zero area:
-            double const inoun = iarea / uarea;
-            if (inoun >= iouth)
+            // draw marker sides:
+            for (int j = 0; j < 4; ++j)
             {
-              if (itsDetections[i].serr > itsDetections[j].serr) delidx = j; else delidx = i;
-              break;
+              cv::Point2f const & p0 = obj[j];
+              cv::Point2f const & p1 = obj[ (j+1) % 4 ];
+              jevois::rawimage::drawLine(outimg, int(p0.x + 0.5F), int(p0.y + 0.5F),
+                                        int(p1.x + 0.5F), int(p1.y + 0.5F), 1, jevois::yuyv::LightPink);
+              //jevois::rawimage::writeText(outimg, std::to_string(j),
+              //			      int(p0.x + 0.5F), int(p0.y + 0.5F), jevois::yuyv::White);
             }
           }
-          if (delidx != -1) break;
         }
-        if (delidx != -1) { itsDetections.erase(itsDetections.begin() + delidx); keepgoing = true; }
-      }
-    }
-    
-    // ####################################################################################################
-    //! Learn and update our HSV ranges
-    void learnHSV(size_t nthreads, cv::Mat const & imgbgr, jevois::RawImage *outimg = nullptr)
-    {
-      int const w = imgbgr.cols, h = imgbgr.rows;
-      
-      // Compute the median filtered BGR image in a thread:
-      cv::Mat medimgbgr;
-      auto median_fut = std::async(std::launch::async, [&](){ cv::medianBlur(imgbgr, medimgbgr, 3); } );
-      
-      // Get all the cleaned-up contours:
-      std::vector<std::vector<cv::Point> > contours;
-      for (detection const & d : itsDetections) contours.push_back(d.contour);
-      
-      // If desired, draw all contours:
-      std::future<void> drawc_fut;
-      if (debug::get() && outimg && outimg->valid())
-        drawc_fut = std::async(std::launch::async, [&]() {
-            // We reinterpret the top portion of our YUYV output image as an opencv 8UC2 image:
-            cv::Mat outuc2(outimg->height, outimg->width, CV_8UC2, outimg->pixelsw<unsigned char>());
-            cv::drawContours(outuc2, contours, -1, jevois::yuyv::LightPink, 2);
-          } );
-      
-      // Draw all the filled contours into a binary mask image:
-      cv::Mat mask(h, w, CV_8UC1, (unsigned char)0);
-      cv::drawContours(mask, contours, -1, 255, -1); // last -1 is for filled
-      
-      // Wait until median filter is done:
-      median_fut.get();
-      
-      // Compute mean and std BGR values inside objects:
-      cv::Mat mean, std;
-      cv::meanStdDev(medimgbgr, mean, std, mask);
-      
-      // Convert to HSV:
-      cv::Mat bgrmean(2, 1, CV_8UC3); bgrmean.at<cv::Vec3b>(0, 0) = mean; bgrmean.at<cv::Vec3b>(1, 0) = std;
-      cv::Mat hsvmean; cv::cvtColor(bgrmean, hsvmean, cv::COLOR_BGR2HSV);
-
-      cv::Vec3b hsv = hsvmean.at<cv::Vec3b>(0, 0);
-      int H = hsv.val[0], S = hsv.val[1], V = hsv.val[2];
-
-      cv::Vec3b sighsv = hsvmean.at<cv::Vec3b>(1, 0);
-      int sH = sighsv.val[0], sS = sighsv.val[1], sV = sighsv.val[2];
-      
-      // Set the new measurements:
-      itsKalH->set(H); itsKalS->set(S); itsKalV->set(V);
-      
-      if (nthreads > 2)
-      {
-        float const eta = 0.4F;
-        itsHSV[2].sih = (1.0F - eta) * itsHSV[2].sih + eta * sH;
-        itsHSV[2].sis = (1.0F - eta) * itsHSV[2].sis + eta * sS;
-        itsHSV[2].siv = (1.0F - eta) * itsHSV[2].siv + eta * sV;
-        itsHSV[2].fix();
-      }
-      
-      // note: drawc_fut may block us here until it is complete.
-    }
-    
-    // ####################################################################################################
-    //! Send serial messages about each detection:
-    void sendAllSerial(int w, int h, std::vector<std::vector<cv::Point2f> > const & corners,
-                       std::vector<cv::Vec3d> const & rvecs, std::vector<cv::Vec3d> const & tvecs)
-    {
-      if (rvecs.empty() == false)
-      {
-        // If we have rvecs and tvecs, we are doing 3D pose estimation, so send a 3D message:
-        auto const osiz = objsize::get();
-        for (size_t i = 0; i < corners.size(); ++i)
-        {
-          std::vector<cv::Point2f> const & curr = corners[i];
-          cv::Vec3d const & rv = rvecs[i];
-          cv::Vec3d const & tv = tvecs[i];
-          
-          // Compute quaternion:
-          float theta = std::sqrt(rv[0] * rv[0] + rv[1] * rv[1] + rv[2] * rv[2]);
-          Eigen::Vector3f axis(rv[0], rv[1], rv[2]);
-          Eigen::Quaternion<float> q(Eigen::AngleAxis<float>(theta, axis));
-          
-          sendSerialStd3D(tv[0], tv[1], tv[2],             // position
-                          osiz.width, osiz.height, 1.0F,   // size
-                          q.w(), q.x(), q.y(), q.z(),      // pose
-                          "FIRST");                        // FIRST robotics shape
-        }
-      }
-      else
-      {
-        // Send one 2D message per object:
-        for (size_t i = 0; i < corners.size(); ++i)
-          sendSerialContour2D(w, h, corners[i], "FIRST");
-      }
-    }
-    
-    // ####################################################################################################
-    //! Update the morphology structuring elements if needed
-    void updateStructuringElements()
-    {
-      int e = erodesize::get();
-      if (e != itsErodeElement.cols)
-      {
-        if (e) itsErodeElement = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(e, e));
-        else itsErodeElement.release();
-      }
-      
-      int d = dilatesize::get();
-      if (d != itsDilateElement.cols)
-      {
-        if (d) itsDilateElement = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(d, d));
-        else itsDilateElement.release();
-      }
-    }
-    
-    // ####################################################################################################
-    //! Processing function, no USB video output
-    virtual void process(jevois::InputFrame && inframe) override
-    {
-      static jevois::Timer timer("processing");
-      
-      // Wait for next available camera image. Any resolution ok:
-      jevois::RawImage inimg = inframe.get(); unsigned int const w = inimg.width, h = inimg.height;
-      
-      timer.start();
-
-      // Load camera calibration if needed:
-      if (itsCamMatrix.empty()) loadCameraCalibration(w, h);
-
-      // Convert input image to BGR24, then to HSV:
-      cv::Mat imgbgr = jevois::rawimage::convertToCvBGR(inimg);
-      cv::Mat imghsv; cv::cvtColor(imgbgr, imghsv, cv::COLOR_BGR2HSV);
-      size_t const nthreads = threads::get();
-      
-      // Make sure our HSV range parameters are up to date:
-      updateHSV(nthreads);
-      
-      // Clear any old detections and get ready to parallelize the detection work:
-      itsDetections.clear();
-      updateStructuringElements();
-      
-      // Launch our workers: run nthreads-1 new threads, and last worker in our current thread:
-      std::vector<std::future<void> > dfut;
-      for (size_t i = 0; i < nthreads - 1; ++i)
-        dfut.push_back(std::async(std::launch::async, [&](size_t tn) { detect(imghsv, tn, 3, h+2); }, i));
-      detect(imghsv, nthreads - 1, 3, h+2);
-      
-      // Wait for all threads to complete:
-      for (auto & f : dfut) try { f.get(); } catch (...) { jevois::warnAndIgnoreException(); }
-      
-      // Let camera know we are done processing the input image:
-      inframe.done();
-      
-      // Clean up the detections by eliminating duplicates:
-      cleanupDetections();
-      
-      // Learn the object's HSV value over time:
-      auto learn_fut = std::async(std::launch::async, [&]() { learnHSV(nthreads, imgbgr); });
-      
-      // Map to 6D (inverse perspective):
-      std::vector<std::vector<cv::Point2f> > corners; std::vector<cv::Vec3d> rvecs, tvecs;
-      estimatePose(corners, rvecs, tvecs);
-
-      // Send all serial messages:
-      sendAllSerial(w, h, corners, rvecs, tvecs);
-      
-      // Wait for all threads:
-      try { learn_fut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
-      
-      // Show processing fps:
-      timer.stop();
-    }
-    
-    // ####################################################################################################
-    //! Processing function, with USB video output
-    virtual void process(jevois::InputFrame && inframe, jevois::OutputFrame && outframe) override
-    {
-      static jevois::Timer timer("processing");
-
-      // Wait for next available camera image. Any resolution ok, but require YUYV since we assume it for drawings:
-      jevois::RawImage inimg = inframe.get(); unsigned int const w = inimg.width, h = inimg.height;
-      inimg.require("input", w, h, V4L2_PIX_FMT_YUYV);
-      
-      timer.start();
-
-      // Load camera calibration if needed:
-      if (itsCamMatrix.empty()) loadCameraCalibration(w, h);
-
-      // While we process it, start a thread to wait for output frame and paste the input image into it:
-      jevois::RawImage outimg; // main thread should not use outimg until paste thread is complete
-      auto paste_fut = std::async(std::launch::async, [&]() {
-          outimg = outframe.get();
-          outimg.require("output", outimg.width, h + 50, inimg.fmt);
-	  if (outimg.width != w && outimg.width != w * 2) LFATAL("Output image width should be 1x or 2x input width");
-          jevois::rawimage::paste(inimg, outimg, 0, 0);
-          jevois::rawimage::writeText(outimg, "JeVois FIRST Vision", 3, 3, jevois::yuyv::White);
-          jevois::rawimage::drawFilledRect(outimg, 0, h, outimg.width, outimg.height-h, jevois::yuyv::Black);
-        });
-      
-      // Convert input image to BGR24, then to HSV:
-      cv::Mat imgbgr = jevois::rawimage::convertToCvBGR(inimg);
-      cv::Mat imghsv; cv::cvtColor(imgbgr, imghsv, cv::COLOR_BGR2HSV);
-      size_t const nthreads = threads::get();
-      
-      // Make sure our HSV range parameters are up to date:
-      updateHSV(nthreads);
-      
-      // Clear any old detections and get ready to parallelize the detection work:
-      itsDetections.clear();
-      updateStructuringElements();
-      
-      // Launch our workers: run nthreads-1 new threads, and last worker in our current thread:
-      std::vector<std::future<void> > dfut;
-      for (size_t i = 0; i < nthreads - 1; ++i)
-        dfut.push_back(std::async(std::launch::async, [&](size_t tn) { detect(imghsv, tn, 3, h+2, &outimg); }, i));
-      detect(imghsv, nthreads - 1, 3, h+2, &outimg);
-      
-      // Wait for all threads to complete:
-      for (auto & f : dfut) try { f.get(); } catch (...) { jevois::warnAndIgnoreException(); }
-      
-      // Wait for paste to finish up:
-      paste_fut.get();
-      
-      // Let camera know we are done processing the input image:
-      inframe.done();
-      
-      // Clean up the detections by eliminating duplicates:
-      cleanupDetections();
-
-      // Learn the object's HSV value over time:
-      auto learn_fut = std::async(std::launch::async, [&]() { learnHSV(nthreads, imgbgr, &outimg); });
-
-      // Map to 6D (inverse perspective):
-      std::vector<std::vector<cv::Point2f> > corners; std::vector<cv::Vec3d> rvecs, tvecs;
-      estimatePose(corners, rvecs, tvecs);
-      
-      // Send all serial messages:
-      sendAllSerial(w, h, corners, rvecs, tvecs);
-      
-      // Draw all detections in 3D:
-      drawDetections(outimg, corners, rvecs, tvecs);
-      
-      // Show number of detected objects:
-      jevois::rawimage::writeText(outimg, "Detected " + std::to_string(itsDetections.size()) + " objects.",
-                                  w + 3, 3, jevois::yuyv::White);
-      
-      // Wait for all threads:
-      try { learn_fut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
-      
-      // Show processing fps:
-      std::string const & fpscpu = timer.stop();
-      jevois::rawimage::writeText(outimg, fpscpu, 3, h - 13, jevois::yuyv::White);
-      
-      // Send the output image with our processing results to the host over USB:
-      outframe.send();
-    }
-    
-    // ####################################################################################################
-    void drawDetections(jevois::RawImage & outimg, std::vector<std::vector<cv::Point2f> > corners,
-			std::vector<cv::Vec3d> const & rvecs, std::vector<cv::Vec3d> const & tvecs)
-    {
-      auto const osiz = objsize::get(); float const w = osiz.width, h = osiz.height;
-      int nobj = int(corners.size());
-      
-      // This code is like drawDetectedMarkers() in cv::aruco, but for YUYV output image:
-      if (rvecs.empty())
-      {
-        // We are not doing 3D pose estimation. Just draw object outlines in 2D:
-        for (int i = 0; i < nobj; ++i)
-        {
-          std::vector<cv::Point2f> const & obj = corners[i];
-          
-          // draw marker sides:
-          for (int j = 0; j < 4; ++j)
-          {
-            cv::Point2f const & p0 = obj[j];
-            cv::Point2f const & p1 = obj[ (j+1) % 4 ];
-            jevois::rawimage::drawLine(outimg, int(p0.x + 0.5F), int(p0.y + 0.5F),
-                                       int(p1.x + 0.5F), int(p1.y + 0.5F), 1, jevois::yuyv::LightPink);
-            //jevois::rawimage::writeText(outimg, std::to_string(j),
-            //			      int(p0.x + 0.5F), int(p0.y + 0.5F), jevois::yuyv::White);
-          }
-        }
-      }
       else
       {
         // Show trihedron and parallelepiped centered on object:
@@ -1184,4 +951,4 @@ class FirstVision_Edit : public jevois::StdModule,
 };
 
 // Allow the module to be loaded as a shared object (.so) file:
-JEVOIS_REGISTER_MODULE(FirstVision_Edit);
+JEVOIS_REGISTER_MODULE(FirstVision_Simplified);

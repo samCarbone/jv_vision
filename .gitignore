@@ -34,3 +34,8 @@
 # Build folders
 hbuild/
 pbuild/
+
+# Mac
+*.DS_Store
+
+.vscode/
