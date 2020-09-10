@@ -39,3 +39,7 @@ pbuild/
 *.DS_Store
 
 .vscode/
+
+# JV
+*.jvpkg
+jvpkg/

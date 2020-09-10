@@ -35,75 +35,82 @@
 
 static jevois::ParameterCategory const ParamCateg("FirstVision_Simplified Options");
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(hmin, unsigned char, "Initial min target hue (0=red/do not use because of "
 				       "wraparound, 30=yellow, 45=light green, 60=green, 75=green cyan, 90=cyan, "
 				       "105=light blue, 120=blue, 135=purple, 150=pink)",
-				       30, jevois::Range<unsigned char>(0, 179), ParamCateg);
+				       10, jevois::Range<unsigned char>(0, 179), ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(hmax, unsigned char, "Initial max target hue (0=red/do not use because of "
 				       "wraparound, 30=yellow, 45=light green, 60=green, 75=green cyan, 90=cyan, "
 				       "105=light blue, 120=blue, 135=purple, 150=pink)",
-				       30, jevois::Range<unsigned char>(0, 179), ParamCateg);
+				       160, jevois::Range<unsigned char>(0, 179), ParamCateg);
 
-//! Parameter \relates FirstVision
-JEVOIS_DECLARE_PARAMETER(houter, bool, "Use exclusive hue range",
-                         false, ParamCateg);
+//! Parameter \relates FirstVision_Simplified
+JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(houter, bool, "Use exclusive hue range",
+                         true, ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smin, unsigned char, "Set the sat min. Sat range is <smin, smax>.",
 				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smax, unsigned char, "Set the sat max. Sat range is <smin, smax>.",
-				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
+				       255, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmin, unsigned char, "Set the value min. Value range is <vmin, vmax>.",
 				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmax, unsigned char, "Set the value max. Value range is <vmin, vmax>.",
-				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
+				       255, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
-// //! Parameter \relates FirstVision
+// //! Parameter \relates FirstVision_Simplified
 // JEVOIS_DECLARE_PARAMETER(maxnumobj, size_t, "Max number of objects to declare a clean image. If more blobs are "
 // 			 "detected in a frame, we skip that frame before we even try to analyze shapes of the blobs",
 //                          100, ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(fillratio_min, int, "Min fill ratio of the convex hull (percent). Higher values mean your shape "
 			 "occupies a higher fraction of its convex hull. This parameter sets a lower bound, "
 			 "less full shapes will be rejected.",
-                         0, jevois::Range<int>(1, 100), ParamCateg);
+                         1, jevois::Range<int>(1, 100), ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(fillratio_max, int, "Max fill ratio of the convex hull (percent). Lower values mean your shape "
 			 "occupies a smaller fraction of its convex hull. This parameter sets an upper bound, "
 			 "fuller shapes will be rejected.",
                          100, jevois::Range<int>(1, 100), ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(erodesize, size_t, "Erosion structuring element size (pixels), or 0 for no erosion",
                          2, ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(dilatesize, size_t, "Dilation structuring element size (pixels), or 0 for no dilation",
                          2, ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(epsilon, double, "Shape smoothing factor (higher for smoother). Shape smoothing is applied "
 			 "to remove small contour defects before the shape is analyzed.",
                          0.015, jevois::Range<double>(0.001, 0.999), ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(shapeerror_max, double, "Shape error threshold (lower is stricter for exact shape)",
                          900.0, jevois::Range<double>(0.01, 1000.0), ParamCateg);
 
-//! Parameter \relates FirstVision
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(objsize, cv::Size_<float>, "Object size (in meters)",
                          cv::Size_<float>(0.28F, 0.175F), ParamCateg);
+
+//! Parameter \relates FirstVision_Simplified
+JEVOIS_DECLARE_PARAMETER(camparams, std::string, "File stem of camera parameters, or empty. Camera resolution "
+			 "will be appended, as well as a .yaml extension. For example, specifying 'calibration' "
+			 "here and running the camera sensor at 320x240 will attempt to load "
+			 "calibration320x240.yaml from within directory " JEVOIS_SHARE_PATH "/camera/",
+			 "calibration", ParamCateg);
 
 //! Simple color-based detection of a U-shaped object for FIRST Robotics
 /*! This module isolates pixels within a given HSV range (hue, saturation, and value of color pixels), does some
@@ -273,7 +280,7 @@ JEVOIS_DECLARE_PARAMETER(objsize, cv::Size_<float>, "Object size (in meters)",
     \ingroup modules */
 class FirstVision_Simplified : public jevois::StdModule,
 		    public jevois::Parameter<hmin, hmax, houter, smin, smax, vmin, vmax, fillratio_max, fillratio_min, erodesize,
-					     dilatesize, epsilon, shapeerror_max, iou, objsize>
+					     dilatesize, epsilon, shapeerror_max, objsize, camparams>
 {
   protected:
     cv::Mat itsCamMatrix; //!< Our camera matrix
@@ -309,9 +316,9 @@ class FirstVision_Simplified : public jevois::StdModule,
         v_min = std::min(255, std::max(0, v_min));
         v_max = std::min(255, std::max(0, v_max));
 
-        if(h_min > h_max) { tmp = h_min; h_min = h_max; h_max = tmp; }
-        if(s_min > s_max) { tmp = s_min; s_min = s_max; s_max = tmp; }
-        if(v_min > v_max) { tmp = v_min; v_min = v_max; v_max = tmp; }
+        if(h_min > h_max) { int tmp = h_min; h_min = h_max; h_max = tmp; }
+        if(s_min > s_max) { int tmp = s_min; s_min = s_max; s_max = tmp; }
+        if(v_min > v_max) { int tmp = v_min; v_min = v_max; v_max = tmp; }
       }
       
       //! Get minimum triplet for use by cv::inRange()
@@ -424,21 +431,19 @@ class FirstVision_Simplified : public jevois::StdModule,
           for (auto const & p : d.hull) v.push_back(cv::Point2f(p));
         }
         
-        if (dopose::get())
-        {
-          // set coordinate system in the middle of the object, with Z pointing out
-          cv::Mat objPoints(4, 1, CV_32FC3);
-          objPoints.ptr< cv::Vec3f >(0)[0] = cv::Vec3f(-osiz.width * 0.5F, -osiz.height * 0.5F, 0);
-          objPoints.ptr< cv::Vec3f >(0)[1] = cv::Vec3f(-osiz.width * 0.5F, osiz.height * 0.5F, 0);
-          objPoints.ptr< cv::Vec3f >(0)[2] = cv::Vec3f(osiz.width * 0.5F, osiz.height * 0.5F, 0);
-          objPoints.ptr< cv::Vec3f >(0)[3] = cv::Vec3f(osiz.width * 0.5F, -osiz.height * 0.5F, 0);
-          
-          int nobj = (int)corners.size();
-          _rvecs.create(nobj, 1, CV_64FC3); _tvecs.create(nobj, 1, CV_64FC3);
-          cv::Mat rvecs = _rvecs.getMat(), tvecs = _tvecs.getMat();
-          cv::parallel_for_(cv::Range(0, nobj), SinglePoseEstimationParallel(objPoints, corners, itsCamMatrix,
-                                                                            itsDistCoeffs, rvecs, tvecs));
-        }
+        // set coordinate system in the middle of the object, with Z pointing out
+        cv::Mat objPoints(4, 1, CV_32FC3);
+        objPoints.ptr< cv::Vec3f >(0)[0] = cv::Vec3f(-osiz.width * 0.5F, -osiz.height * 0.5F, 0);
+        objPoints.ptr< cv::Vec3f >(0)[1] = cv::Vec3f(-osiz.width * 0.5F, osiz.height * 0.5F, 0);
+        objPoints.ptr< cv::Vec3f >(0)[2] = cv::Vec3f(osiz.width * 0.5F, osiz.height * 0.5F, 0);
+        objPoints.ptr< cv::Vec3f >(0)[3] = cv::Vec3f(osiz.width * 0.5F, -osiz.height * 0.5F, 0);
+        
+        int nobj = (int)corners.size();
+        _rvecs.create(nobj, 1, CV_64FC3); _tvecs.create(nobj, 1, CV_64FC3);
+        cv::Mat rvecs = _rvecs.getMat(), tvecs = _tvecs.getMat();
+        cv::parallel_for_(cv::Range(0, nobj), SinglePoseEstimationParallel(objPoints, corners, itsCamMatrix,
+                                                                          itsDistCoeffs, rvecs, tvecs));
+      
       }
 
       // ####################################################################################################
@@ -479,7 +484,7 @@ class FirstVision_Simplified : public jevois::StdModule,
           // [left_min, left_max] || [right_min, right_max]
           cv::Scalar left_min = rmin; left_min[0] = 0; // Need to set the min h to zero because of the overlap
           cv::Scalar left_max = rmax; left_max[0] = rmin[0];
-          cv::Scalar right_min = rmin; right_max[0] = rmax[0];
+          cv::Scalar right_min = rmin; right_min[0] = rmax[0];
           cv::Scalar right_max = rmax; right_max[0] = 179;
 
           // H: 0-179, S: 0-255, V:0-255
@@ -514,7 +519,7 @@ class FirstVision_Simplified : public jevois::StdModule,
         int num_contours_with_child = 0;
 
         // Identify the "good" objects:
-        std::string str_debug, str_flags, beststr_flag, beststr_debug;
+        std::string str_debug, str_flags, beststr_flags, beststr_debug;
         if (hierarchy.size() > 0 && hierarchy.size())
         {
           // Goes to the next index of the same hierarchy
@@ -541,8 +546,8 @@ class FirstVision_Simplified : public jevois::StdModule,
               cv::convexHull(c_parent, hull_parent, true);  // true --> clockwise
 
               // Is it the right shape?
-              str_debug += "HP=" + std::to_string(hull_parent.size);
-              str_debug += "HC=" + std::to_string(hull_child.size);
+              str_debug += "HP=" + std::to_string(hull_parent.size());
+              str_debug += "HC=" + std::to_string(hull_child.size());
               if (hull_child.size() != 4 || hull_parent.size() != 4) continue;
               str_flags += "H,"; // Hull is quadrilateral
 
@@ -556,14 +561,14 @@ class FirstVision_Simplified : public jevois::StdModule,
               
               int const fill_ratio = int(area_diff / area_parent * 100.0 + 0.4999);
               str_debug += ",F=" + std::to_string(fill_ratio); // fill ratio
-              if (hufill > fillratio_max::get() || hufill < fillratio_min::get()) continue;
+              if (fill_ratio > fillratio_max::get() || fill_ratio < fillratio_min::get()) continue;
               str_flags += "F,"; // Fill is ok          
 
               // Compute contour shape error:
               std::vector<cv::Point> c_approx_child;
               double const childhullperi = cv::arcLength(c_child, true);
               cv::approxPolyDP(c_child, c_approx_child, epsilon::get() * childhullperi * 3.0, true);   
-              shape_error = 100.0 * cv::matchShapes(c_approx_child, hull_child, cv::CONTOURS_MATCH_I1, 0.0);
+              const int shape_error = int(100.0 * cv::matchShapes(c_approx_child, hull_child, cv::CONTOURS_MATCH_I1, 0.0));
               str_debug += ",SE=" + std::to_string(shape_error); // fill ratio
               if (shape_error > shapeerror_max::get()) continue;
               str_flags += "E,"; // Shape error is ok
@@ -593,9 +598,9 @@ class FirstVision_Simplified : public jevois::StdModule,
                   draw_contours.push_back(d.hull);
                   draw_contours.push_back(d.contour);
                   draw_contours.push_back(d.approx);
-                  cv::drawContours(outuc2, hull_temp, 0, jevois::yuyv::LightGreen, 2, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
-                  cv::drawContours(outuc2, hull_temp, 1, jevois::yuyv::MedPurple, 1, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
-                  cv::drawContours(outuc2, hull_temp, 2, jevois::yuyv::MedPurple, 1, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
+                  cv::drawContours(outuc2, draw_contours, 0, jevois::yuyv::LightGreen, 2, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
+                  cv::drawContours(outuc2, draw_contours, 1, jevois::yuyv::MedPurple, 1, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
+                  cv::drawContours(outuc2, draw_contours, 2, jevois::yuyv::MedPurple, 1, 8, cv::noArray(), INT_MAX, cv::Point(imgth.cols, 0));
 
                   jevois::rawimage::drawCircle(*outimg, d.hull[0].x + imgth.cols, d.hull[0].y, 10,
                                                 2, jevois::yuyv::LightGreen);
@@ -605,8 +610,8 @@ class FirstVision_Simplified : public jevois::StdModule,
             
               }
             
-              if (str_flag.length() > beststr_flag.length()) {
-                beststr_flag = str_flag;
+              if (str_flags.length() > beststr_flags.length()) {
+                beststr_flags = str_flags;
                 beststr_debug = str_debug;
               }     
             }
@@ -615,10 +620,10 @@ class FirstVision_Simplified : public jevois::StdModule,
           str += jevois::sformat("NC=%03d ", num_contours_with_child);
 
           // Display any results requested by the users:
-          if (outimg && outimg->valid() && beststr_flag.length())
+          if (outimg && outimg->valid() && beststr_flags.length())
           {
-            jevois::rawimage::writeText(*outimg, str+beststr_flag, 3, 242, jevois::yuyv::White);
-            jevois::rawimage::writeText(*outimg, str+beststr_debug, dispx, 242 + 12*2, jevois::yuyv::White);
+            jevois::rawimage::writeText(*outimg, str+beststr_flags, 3, 242, jevois::yuyv::White);
+            jevois::rawimage::writeText(*outimg, str+beststr_debug, 3, 242 + 12*2, jevois::yuyv::White);
           }
 
         }
@@ -629,7 +634,6 @@ class FirstVision_Simplified : public jevois::StdModule,
       //! Initialize (e.g., if user changes cue params)
       void updateHSV()
       {
-        float const spread = 0.2F;
         if (itsHSV.empty() || itsCueChanged)
         {
           // Initialize or reset because of user parameter change:
@@ -641,62 +645,62 @@ class FirstVision_Simplified : public jevois::StdModule,
       
       // ####################################################################################################
       //! Learn and update our HSV ranges
-      void learnHSV(size_t nthreads, cv::Mat const & imgbgr, jevois::RawImage *outimg = nullptr)
-      {
-        int const w = imgbgr.cols, h = imgbgr.rows;
+      // void learnHSV(size_t nthreads, cv::Mat const & imgbgr, jevois::RawImage *outimg = nullptr)
+      // {
+      //   int const w = imgbgr.cols, h = imgbgr.rows;
         
-        // Compute the median filtered BGR image in a thread:
-        cv::Mat medimgbgr;
-        auto median_fut = std::async(std::launch::async, [&](){ cv::medianBlur(imgbgr, medimgbgr, 3); } );
+      //   // Compute the median filtered BGR image in a thread:
+      //   cv::Mat medimgbgr;
+      //   auto median_fut = std::async(std::launch::async, [&](){ cv::medianBlur(imgbgr, medimgbgr, 3); } );
         
-        // Get all the cleaned-up contours:
-        std::vector<std::vector<cv::Point> > contours;
-        for (detection const & d : itsDetections) contours.push_back(d.contour);
+      //   // Get all the cleaned-up contours:
+      //   std::vector<std::vector<cv::Point> > contours;
+      //   for (detection const & d : itsDetections) contours.push_back(d.contour);
         
-        // If desired, draw all contours:
-        std::future<void> drawc_fut;
-        if (debug::get() && outimg && outimg->valid())
-          drawc_fut = std::async(std::launch::async, [&]() {
-              // We reinterpret the top portion of our YUYV output image as an opencv 8UC2 image:
-              cv::Mat outuc2(outimg->height, outimg->width, CV_8UC2, outimg->pixelsw<unsigned char>());
-              cv::drawContours(outuc2, contours, -1, jevois::yuyv::LightPink, 2);
-            } );
+      //   // If desired, draw all contours:
+      //   std::future<void> drawc_fut;
+      //   if (debug::get() && outimg && outimg->valid())
+      //     drawc_fut = std::async(std::launch::async, [&]() {
+      //         // We reinterpret the top portion of our YUYV output image as an opencv 8UC2 image:
+      //         cv::Mat outuc2(outimg->height, outimg->width, CV_8UC2, outimg->pixelsw<unsigned char>());
+      //         cv::drawContours(outuc2, contours, -1, jevois::yuyv::LightPink, 2);
+      //       } );
         
-        // Draw all the filled contours into a binary mask image:
-        cv::Mat mask(h, w, CV_8UC1, (unsigned char)0);
-        cv::drawContours(mask, contours, -1, 255, -1); // last -1 is for filled
+      //   // Draw all the filled contours into a binary mask image:
+      //   cv::Mat mask(h, w, CV_8UC1, (unsigned char)0);
+      //   cv::drawContours(mask, contours, -1, 255, -1); // last -1 is for filled
         
-        // Wait until median filter is done:
-        median_fut.get();
+      //   // Wait until median filter is done:
+      //   median_fut.get();
         
-        // Compute mean and std BGR values inside objects:
-        cv::Mat mean, std;
-        cv::meanStdDev(medimgbgr, mean, std, mask);
+      //   // Compute mean and std BGR values inside objects:
+      //   cv::Mat mean, std;
+      //   cv::meanStdDev(medimgbgr, mean, std, mask);
         
-        // Convert to HSV:
-        cv::Mat bgrmean(2, 1, CV_8UC3); bgrmean.at<cv::Vec3b>(0, 0) = mean; bgrmean.at<cv::Vec3b>(1, 0) = std;
-        cv::Mat hsvmean; cv::cvtColor(bgrmean, hsvmean, cv::COLOR_BGR2HSV);
+      //   // Convert to HSV:
+      //   cv::Mat bgrmean(2, 1, CV_8UC3); bgrmean.at<cv::Vec3b>(0, 0) = mean; bgrmean.at<cv::Vec3b>(1, 0) = std;
+      //   cv::Mat hsvmean; cv::cvtColor(bgrmean, hsvmean, cv::COLOR_BGR2HSV);
 
-        cv::Vec3b hsv = hsvmean.at<cv::Vec3b>(0, 0);
-        int H = hsv.val[0], S = hsv.val[1], V = hsv.val[2];
+      //   cv::Vec3b hsv = hsvmean.at<cv::Vec3b>(0, 0);
+      //   int H = hsv.val[0], S = hsv.val[1], V = hsv.val[2];
 
-        cv::Vec3b sighsv = hsvmean.at<cv::Vec3b>(1, 0);
-        int sH = sighsv.val[0], sS = sighsv.val[1], sV = sighsv.val[2];
+      //   cv::Vec3b sighsv = hsvmean.at<cv::Vec3b>(1, 0);
+      //   int sH = sighsv.val[0], sS = sighsv.val[1], sV = sighsv.val[2];
         
-        // Set the new measurements:
-        itsKalH->set(H); itsKalS->set(S); itsKalV->set(V);
+      //   // Set the new measurements:
+      //   itsKalH->set(H); itsKalS->set(S); itsKalV->set(V);
         
-        if (nthreads > 2)
-        {
-          float const eta = 0.4F;
-          itsHSV[2].sih = (1.0F - eta) * itsHSV[2].sih + eta * sH;
-          itsHSV[2].sis = (1.0F - eta) * itsHSV[2].sis + eta * sS;
-          itsHSV[2].siv = (1.0F - eta) * itsHSV[2].siv + eta * sV;
-          itsHSV[2].fix();
-        }
+      //   if (nthreads > 2)
+      //   {
+      //     float const eta = 0.4F;
+      //     itsHSV[2].sih = (1.0F - eta) * itsHSV[2].sih + eta * sH;
+      //     itsHSV[2].sis = (1.0F - eta) * itsHSV[2].sis + eta * sS;
+      //     itsHSV[2].siv = (1.0F - eta) * itsHSV[2].siv + eta * sV;
+      //     itsHSV[2].fix();
+      //   }
         
-        // note: drawc_fut may block us here until it is complete.
-      }
+      //   // note: drawc_fut may block us here until it is complete.
+      // }
       
       
       // ####################################################################################################
@@ -849,7 +853,7 @@ class FirstVision_Simplified : public jevois::StdModule,
                                     w + 3, 3, jevois::yuyv::White);
         
         // Wait for all threads:
-        try { learn_fut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
+        // try { learn_fut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
         
         // Show processing fps:
         std::string const & fpscpu = timer.stop();
