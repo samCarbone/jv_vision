@@ -39,13 +39,13 @@ static jevois::ParameterCategory const ParamCateg("FirstVision_Simplified Option
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(hmin, unsigned char, "Initial min target hue (0=red/do not use because of "
 				       "wraparound, 30=yellow, 45=light green, 60=green, 75=green cyan, 90=cyan, "
 				       "105=light blue, 120=blue, 135=purple, 150=pink)",
-				       10, jevois::Range<unsigned char>(0, 179), ParamCateg);
+				       20, jevois::Range<unsigned char>(0, 179), ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(hmax, unsigned char, "Initial max target hue (0=red/do not use because of "
 				       "wraparound, 30=yellow, 45=light green, 60=green, 75=green cyan, 90=cyan, "
 				       "105=light blue, 120=blue, 135=purple, 150=pink)",
-				       160, jevois::Range<unsigned char>(0, 179), ParamCateg);
+				       130, jevois::Range<unsigned char>(0, 179), ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(houter, bool, "Use exclusive hue range",
@@ -53,7 +53,7 @@ JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(houter, bool, "Use exclusive hue range",
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smin, unsigned char, "Set the sat min. Sat range is <smin, smax>.",
-				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
+				       40, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smax, unsigned char, "Set the sat max. Sat range is <smin, smax>.",
@@ -61,7 +61,7 @@ JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smax, unsigned char, "Set the sat max. Sa
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmin, unsigned char, "Set the value min. Value range is <vmin, vmax>.",
-				       20, jevois::Range<unsigned char>(0, 255), ParamCateg);
+				       45, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmax, unsigned char, "Set the value max. Value range is <vmin, vmax>.",
@@ -76,13 +76,13 @@ JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmax, unsigned char, "Set the value max. 
 JEVOIS_DECLARE_PARAMETER(fillratio_min, int, "Min fill ratio of the convex hull (percent). Higher values mean your shape "
 			 "occupies a higher fraction of its convex hull. This parameter sets a lower bound, "
 			 "less full shapes will be rejected.",
-                         1, jevois::Range<int>(1, 100), ParamCateg);
+                         10, jevois::Range<int>(1, 100), ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(fillratio_max, int, "Max fill ratio of the convex hull (percent). Lower values mean your shape "
 			 "occupies a smaller fraction of its convex hull. This parameter sets an upper bound, "
 			 "fuller shapes will be rejected.",
-                         100, jevois::Range<int>(1, 100), ParamCateg);
+                         40, jevois::Range<int>(1, 100), ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(erodesize, size_t, "Erosion structuring element size (pixels), or 0 for no erosion",
@@ -90,7 +90,7 @@ JEVOIS_DECLARE_PARAMETER(erodesize, size_t, "Erosion structuring element size (p
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(dilatesize, size_t, "Dilation structuring element size (pixels), or 0 for no dilation",
-                         2, ParamCateg);
+                         4, ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(epsilon, double, "Shape smoothing factor (higher for smoother). Shape smoothing is applied "
@@ -533,6 +533,10 @@ class FirstVision_Simplified : public jevois::StdModule,
               num_contours_with_child += 1;
 
               // Keep track of our best detection so far:
+              if (str_flags.length() > beststr_flags.length()) {
+                beststr_flags = str_flags;
+                beststr_debug = str_debug;
+              }     
               str_flags.clear();
               str_debug.clear();
               
@@ -541,14 +545,18 @@ class FirstVision_Simplified : public jevois::StdModule,
               std::vector<cv::Point> const & c_child = contours[hierarchy[index][2]];
               
               // Compute convex hull:
-              std::vector<cv::Point> hull_child, hull_parent;
-              cv::convexHull(c_child, hull_child, true);  // true --> clockwise
-              cv::convexHull(c_parent, hull_parent, true);  // true --> clockwise
+              std::vector<cv::Point> raw_hull_child, raw_hull_parent, hull_child, hull_parent;
+              cv::convexHull(c_child, raw_hull_child, true);  // true --> clockwise
+              cv::convexHull(c_parent, raw_hull_parent, true);  // true --> clockwise
+              double const childhullperi = cv::arcLength(raw_hull_child, true);
+              cv::approxPolyDP(raw_hull_child, hull_child, epsilon::get() * childhullperi * 3.0, true);
+              cv::approxPolyDP(raw_hull_parent, hull_parent, epsilon::get() * childhullperi * 3.0, true);
 
               // Is it the right shape?
               str_debug += "HP=" + std::to_string(hull_parent.size());
               str_debug += "HC=" + std::to_string(hull_child.size());
-              if (hull_child.size() != 4 || hull_parent.size() != 4) continue;
+              str_flags += "-";
+              if (hull_child.size() != 4 || (hull_parent.size() < 4 && hull_parent.size() > 6) ) continue;
               str_flags += "H,"; // Hull is quadrilateral
 
               // Look at the difference between the convex hull and the contour
@@ -564,11 +572,13 @@ class FirstVision_Simplified : public jevois::StdModule,
               if (fill_ratio > fillratio_max::get() || fill_ratio < fillratio_min::get()) continue;
               str_flags += "F,"; // Fill is ok          
 
-              // Compute contour shape error:
+              // Not used
               std::vector<cv::Point> c_approx_child;
-              double const childhullperi = cv::arcLength(c_child, true);
-              cv::approxPolyDP(c_child, c_approx_child, epsilon::get() * childhullperi * 3.0, true);   
-              const int shape_error = int(100.0 * cv::matchShapes(c_approx_child, hull_child, cv::CONTOURS_MATCH_I1, 0.0));
+              double const childcontourperi = cv::arcLength(c_child, true);
+              cv::approxPolyDP(c_child, c_approx_child, epsilon::get() * childcontourperi, true);   
+              
+              // Compute contour shape error:
+              const int shape_error = int(100.0 * cv::matchShapes(c_child, hull_child, cv::CONTOURS_MATCH_I1, 0.0));
               str_debug += ",SE=" + std::to_string(shape_error); // fill ratio
               if (shape_error > shapeerror_max::get()) continue;
               str_flags += "E,"; // Shape error is ok
@@ -617,17 +627,17 @@ class FirstVision_Simplified : public jevois::StdModule,
             }
           }
 
-          str += jevois::sformat("NC=%03d ", num_contours_with_child);
-
-          // Display any results requested by the users:
-          if (outimg && outimg->valid() && beststr_flags.length())
-          {
-            jevois::rawimage::writeText(*outimg, str+beststr_flags, 3, 242, jevois::yuyv::White);
-            jevois::rawimage::writeText(*outimg, str+beststr_debug, 3, 242 + 12*2, jevois::yuyv::White);
-          }
-
         }
         
+        str += jevois::sformat("NC=%03d ", num_contours_with_child);
+
+        // Display any results requested by the users:
+        if (outimg && outimg->valid())
+        {
+          jevois::rawimage::writeText(*outimg, str+beststr_flags, 3, 20, jevois::yuyv::White);
+          jevois::rawimage::writeText(*outimg, beststr_debug, 3, 20 + 12*2, jevois::yuyv::White);
+        }
+
       }
       
       // ####################################################################################################
