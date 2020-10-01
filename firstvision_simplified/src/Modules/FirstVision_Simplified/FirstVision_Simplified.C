@@ -93,6 +93,14 @@ JEVOIS_DECLARE_PARAMETER(dilatesize, size_t, "Dilation structuring element size 
                          4, ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
+JEVOIS_DECLARE_PARAMETER(blursize, size_t, "Gaussian blur structuring element size (pixels), must be odd",
+                         3, ParamCateg);
+
+//! Parameter \relates FirstVision_Simplified
+JEVOIS_DECLARE_PARAMETER(blursigma, size_t, "Sigma for gaussian blur",
+                         1, ParamCateg);
+
+//! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER(epsilon, double, "Shape smoothing factor (higher for smoother). Shape smoothing is applied "
 			 "to remove small contour defects before the shape is analyzed.",
                          0.015, jevois::Range<double>(0.001, 0.999), ParamCateg);
@@ -280,7 +288,7 @@ JEVOIS_DECLARE_PARAMETER(camparams, std::string, "File stem of camera parameters
     \ingroup modules */
 class FirstVision_Simplified : public jevois::StdModule,
 		    public jevois::Parameter<hmin, hmax, houter, smin, smax, vmin, vmax, fillratio_max, fillratio_min, erodesize,
-					     dilatesize, epsilon, shapeerror_max, objsize, camparams>
+					     dilatesize, epsilon, shapeerror_max, objsize, camparams, blursize, blursigma>
 {
   protected:
     cv::Mat itsCamMatrix; //!< Our camera matrix
@@ -471,8 +479,13 @@ class FirstVision_Simplified : public jevois::StdModule,
       {
         std::string str = "";
 
-        // Apply gaussian filter
-
+        // Apply gaussian blur
+        cv::Mat imgblur;
+        unsigned int len = blursize::get();
+        len = len % 2 == 1 ? len : len + 1;
+        // cv::GaussianBlur(imghsv, imgblur, cv::Size(len, len), blursigma::get());
+        len = len >= 3 ? len : 3;
+        cv::medianBlur(imghsv, imgblur, len);
 
         // Threshold the HSV image to only keep pixels within the desired HSV range:
         cv::Mat imgth;     
@@ -489,13 +502,13 @@ class FirstVision_Simplified : public jevois::StdModule,
 
           // H: 0-179, S: 0-255, V:0-255
           cv::Mat imgth_lower; cv::Mat imgth_upper;
-          cv::inRange(imghsv, left_min, left_max, imgth_lower);
-          cv::inRange(imghsv, right_min, right_max, imgth_upper);
+          cv::inRange(imgblur, left_min, left_max, imgth_lower);
+          cv::inRange(imgblur, right_min, right_max, imgth_upper);
           cv::bitwise_or(imgth_lower, imgth_upper, imgth);
         }
         else {
           cv::Scalar const rmin = hsv.rmin(), rmax = hsv.rmax();
-          cv::inRange(imghsv, rmin, rmax, imgth);
+          cv::inRange(imgblur, rmin, rmax, imgth);
         }
 
         // Apply morphological operations to cleanup the image noise:
@@ -809,10 +822,9 @@ class FirstVision_Simplified : public jevois::StdModule,
         jevois::RawImage outimg; // main thread should not use outimg until paste thread is complete
         auto paste_fut = std::async(std::launch::async, [&]() {
             outimg = outframe.get();
-            outimg.require("output", outimg.width, h + 50, inimg.fmt);
+            outimg.require("output", outimg.width, h, inimg.fmt);
       if (outimg.width != w && outimg.width != w * 2) LFATAL("Output image width should be 1x or 2x input width");
             jevois::rawimage::paste(inimg, outimg, 0, 0);
-            jevois::rawimage::writeText(outimg, "JeVois FIRST Vision", 3, 3, jevois::yuyv::White);
             jevois::rawimage::drawFilledRect(outimg, 0, h, outimg.width, outimg.height-h, jevois::yuyv::Black);
           });
         
