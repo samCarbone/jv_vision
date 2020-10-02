@@ -30,6 +30,20 @@
 
 #include <Eigen/Geometry> // for AngleAxis and Quaternion
 
+// For IPC
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/sync/named_semaphore.hpp>
+
+using namespace boost::interprocess;
+
+// Structure of IPC mapped memory
+typedef struct {
+  double translation[3]; // Vector to the detected object
+  double rotation[3]; // Orientation vector of the detected object
+  long int proc_time; // Time take to process this frame
+} cam_ipc_data_t;
+
 // REMINDER: make sure you understand the viral nature and terms of the above license. If you are writing code derived
 // from this file, you must offer your source under the GPL license too.
 
@@ -398,9 +412,14 @@ class FirstVision_Simplified : public jevois::StdModule,
         cv::Mat & rvecs, tvecs;
     };
 
+    // Variables for IPC
+    void * memaddr = nullptr;
+    cam_ipc_data_t * memdata = nullptr;
+    shared_memory_object * segment = nullptr;
+    named_semaphore * sem_filled = nullptr;
+    named_semaphore * sem_empty = nullptr;
+    mapped_region * memregion = nullptr;
 
-
-    // Delete
 
 
 
@@ -414,12 +433,47 @@ class FirstVision_Simplified : public jevois::StdModule,
       //! Constructor
       FirstVision_Simplified(std::string const & instance) : jevois::StdModule(instance)
       {
+          // Start IPC
+          // Remove anything previously present
+          shared_memory_object::remove("SharedMemoryCam");
+          named_semaphore::remove("SemFilledCam");
+          named_semaphore::remove("SemEmptyCam");
+
+          // Create the shared memory object
+          // Define the memory segment
+          segment = new shared_memory_object(open_or_create, "SharedMemoryCam", read_write /*mode*/); // or could be 
+
+          // Open/create named semaphore
+          sem_filled = new named_semaphore(open_or_create, "SemFilledCam", 0);
+          sem_empty = new named_semaphore(open_or_create, "SemEmptyCam", 0);
+
+          // Set size
+          segment->truncate(sizeof(cam_ipc_data_t));
+
+          // Map the shared memory
+          memregion = new mapped_region(*segment /*what to map*/, read_write /*Map it as read-write*/);
+
+          // Get the address of the mapped region
+          memaddr = memregion->get_address();
+
+          // Construct the shared structure in memory
+          // I.e. assigning this pointer to the structure's address
+          memdata = new (memaddr) cam_ipc_data_t;
+
+          // Need to set sem_empty to high
+          sem_empty->post();
 
       }
     
       // ####################################################################################################
       //! Virtual destructor for safe inheritance
-      virtual ~FirstVision_Simplified() { }
+      virtual ~FirstVision_Simplified() {
+
+          // Remove the shared memory object
+          shared_memory_object::remove("SharedMemoryCam");
+          named_semaphore::remove("SemFilledCam");
+          named_semaphore::remove("SemEmptyCam");
+       }
 
       // ####################################################################################################
       //! Estimate 6D pose of detected objects, if dopose parameter is true, otherwise just 2D corners
@@ -863,9 +917,15 @@ class FirstVision_Simplified : public jevois::StdModule,
         // Map to 6D (inverse perspective):
         std::vector<std::vector<cv::Point2f> > corners; std::vector<cv::Vec3d> rvecs, tvecs;
         estimatePose(corners, rvecs, tvecs);
-        
-        // Send all serial messages:
-        // sendAllSerial(w, h, corners, rvecs, tvecs);
+
+        // cv::Vec3d rvec_test(1, 2, 3); 
+        // cv::Vec3d tvec_test(4, 5, 6);
+
+        // If there is at least one detection
+        if(rvecs.size() && tvecs.size()) {
+          // Only sending the first detection
+          sendDataIPC(rvecs.at(0), tvecs.at(0));
+        }
         
         // Draw all detections in 3D:
         drawDetections(outimg, corners, rvecs, tvecs);
@@ -884,6 +944,56 @@ class FirstVision_Simplified : public jevois::StdModule,
         // Send the output image with our processing results to the host over USB:
         outframe.send();
       }
+
+      bool sendDataIPC(const cv::Vec3d &rvec, const cv::Vec3d &tvec, const long int proc_time=0) {
+        
+        // Make sure that the previous is not in the process of being read
+        // Which would be that 
+        // sem_filled low and sem_empty low --> started reading, not done yet, ---> skip
+        // sem_filled low and sem_empty high --> started and done reading/no data set --> normal
+        // sem_filled high, sem_empty low --> not started reading --> reset then normal
+        // sem_filled high, sem_empty high --> not possible
+        if(sem_filled->try_wait()) {
+          if(sem_empty->try_wait()) {
+            // should not be possible to reach here
+          }
+          else {
+            // not started reading
+            // Replace the old data with the new data
+          }
+        }
+        else {
+          if(sem_empty->try_wait()) {
+            // started and done reading --> normal
+          }
+          else {
+            // started reading, not done yet
+            // Should be unlikely that this occurs, provided the time between
+            // getting new data is slower than the time to read the old data
+            // could put a delay in here, but for now a skip should suffice.
+            // skip
+            return false;
+          }
+        }
+
+        // Copy the rotation and translation vectors into the send data memory
+        memdata->translation[0] = tvec[0];
+        memdata->translation[1] = tvec[1];
+        memdata->translation[2] = tvec[2];
+
+        memdata->rotation[0] = rvec[0];
+        memdata->rotation[1] = rvec[1];
+        memdata->rotation[2] = rvec[2];
+
+        memdata->proc_time = proc_time;
+
+        // Data is now filled
+        sem_filled->post();
+
+        return true;
+      }
+
+
       
       // ####################################################################################################
       void drawDetections(jevois::RawImage & outimg, std::vector<std::vector<cv::Point2f> > corners,
