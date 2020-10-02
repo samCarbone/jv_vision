@@ -45,8 +45,10 @@ include_directories("/var/lib/jevois-build/usr/include") # find jevoisbase inclu
 # Fix path assumptions in the optical flow code for Eigen:
 if (JEVOIS_PLATFORM)
   add_definitions(-I${JEVOIS_BUILDROOT_BASE}/host/usr/arm-buildroot-linux-gnueabihf/sysroot/usr/include/eigen3)
+  set(BOOST_LIBRARIES, "/usr/share/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/arm-buildroot-linux-gnueabihf/sysroot/usr/include/boost")
 else (JEVOIS_PLATFORM)
   add_definitions(-I/usr/include/eigen3)
+  set(BOOST_LIBRARIES, "usr/include/boost")
 endif (JEVOIS_PLATFORM)
 
 # If you also want to use some of the jevoisbase contribs, just add the appropriate include paths here.  You will also
@@ -56,6 +58,8 @@ endif (JEVOIS_PLATFORM)
 include_directories("$ENV{JEVOIS_SRC_ROOT}/jevoisbase/Contrib/darknet-nnpack/include")
 include_directories("$ENV{JEVOIS_SRC_ROOT}/jevoisbase/Contrib/NNPACK/include")
 include_directories("$ENV{JEVOIS_SRC_ROOT}/jevoisbase/Contrib/pthreadpool/include")
+# include boost
+INCLUDE_DIRECTORIES(${BOOST_LIBRARIES})
 
 ## Setup our modules that are in src/Modules. First arg: source directory for modules; 2nd arg: target build
 ## dependencies (i.e., cmake targets which must be built here before we build the modules), usually empty for a single
@@ -64,8 +68,9 @@ include_directories("$ENV{JEVOIS_SRC_ROOT}/jevoisbase/Contrib/pthreadpool/includ
 jevois_setup_modules(src/Modules "")
 
 ## Add any link libraries for each module. Add 'jevoisbase' here if you want to link against it:
-target_link_libraries(FirstVision_Simplified ${JEVOIS_OPENCV_LIBS} opencv_imgproc opencv_core)
+target_link_libraries(FirstVision_Simplified ${JEVOIS_OPENCV_LIBS} opencv_imgproc opencv_core jevoisbase)
 target_link_libraries(FirstVision_Simplified jevoisbase)
+target_link_libraries(FirstVision_Simplified ${Boost_LIBRARIES} -lboost_system -lboost_regex -lboost_thread -lpthread -lrt -ltbb -ldl -lutil -lm)
 
 ## Install any shared resources (cascade classifiers, neural network weights, etc) in the share/ sub-directory:
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/share"
