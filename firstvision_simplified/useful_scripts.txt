@@ -1,0 +1,1 @@
+jevois-daemon --videomapping=33 --cameradev=/dev/video2
