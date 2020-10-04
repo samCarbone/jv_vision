@@ -924,7 +924,13 @@ class FirstVision_Simplified : public jevois::StdModule,
         // If there is at least one detection
         if(rvecs.size() && tvecs.size()) {
           // Only sending the first detection
-          sendDataIPC(rvecs.at(0), tvecs.at(0));
+          // Convert the rodirigues rotation vector to a center-wise vector
+          cv::Mat rotMat(3,3, CV_64F);
+          cv::Rodrigues(rvecs.at(0), rotMat);
+          cv::Vec3d body_axis(0,0,1);
+          cv::Mat3d cvec_m = rotMat * cv::Mat(body_axis); // Vector from the centre of the gate pointing outwards in cam frame
+          cv::Vec3d cvec(cvec_m.at<cv::Vec3d>());
+          sendDataIPC(cvec, tvecs.at(0));
         }
         
         // Draw all detections in 3D:
