@@ -843,16 +843,14 @@ public:
     jevois::RawImage inimg = inframe.get();
     unsigned int const w = inimg.width, h = inimg.height;
 
-    timer.start();
+    // timer.start();
 
     // Load camera calibration if needed:
-    if (itsCamMatrix.empty())
-      loadCameraCalibration(w, h);
+    if (itsCamMatrix.empty()) loadCameraCalibration(w, h);
 
     // Convert input image to BGR24, then to HSV:
     cv::Mat imgbgr = jevois::rawimage::convertToCvBGR(inimg);
-    cv::Mat imghsv;
-    cv::cvtColor(imgbgr, imghsv, cv::COLOR_BGR2HSV);
+    cv::Mat imghsv; cv::cvtColor(imgbgr, imghsv, cv::COLOR_BGR2HSV);
 
     // Make sure our HSV range parameters are up to date:
     updateHSV();
@@ -881,8 +879,7 @@ public:
     // auto learn_fut = std::async(std::launch::async, [&]() { learnHSV(nthreads, imgbgr); });
 
     // Map to 6D (inverse perspective):
-    std::vector<std::vector<cv::Point2f>> corners;
-    std::vector<cv::Vec3d> rvecs, tvecs;
+    std::vector<std::vector<cv::Point2f>> corners; std::vector<cv::Vec3d> rvecs, tvecs;
     estimatePose(corners, rvecs, tvecs);
 
     // If there is at least one detection
@@ -905,7 +902,7 @@ public:
     // try { learn_fut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
 
     // Show processing fps:
-    timer.stop();
+    // timer.stop();
   }
 
   // ####################################################################################################
