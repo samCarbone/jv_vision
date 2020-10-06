@@ -837,13 +837,13 @@ public:
     //! Processing function, no USB video output
     virtual void process(jevois::InputFrame &&inframe) override
     {
-        static jevois::Timer timer("processing");
+        static jevois::Timer timer("processing_no");
 
         // Wait for next available camera image. Any resolution ok:
         jevois::RawImage inimg = inframe.get();
         unsigned int const w = inimg.width, h = inimg.height;
 
-        // timer.start();
+        timer.start();
 
         // Load camera calibration if needed:
         if (itsCamMatrix.empty())
@@ -905,7 +905,7 @@ public:
         // try { learn_fut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
 
         // Show processing fps:
-        // timer.stop();
+        timer.stop();
     }
 
     // ####################################################################################################
