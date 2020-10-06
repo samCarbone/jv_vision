@@ -477,6 +477,12 @@ public:
 
         // Need to set sem_empty to high
         sem_empty->post();
+
+        // Post a starting message - indicated by a negative timestamp
+        cv::Vec3d cvec(0,0,0);
+        cv::Vec3d tvec(0,0,0);
+        sendDataIPC(cvec, tvec, -500);
+
     }
 
     // ####################################################################################################
