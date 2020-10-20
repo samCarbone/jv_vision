@@ -438,6 +438,7 @@ protected:
     named_semaphore *sem_filled = nullptr;
     named_semaphore *sem_empty = nullptr;
     mapped_region *memregion = nullptr;
+    bool first_iter = true;
 
     // ####################################################################################################
     // ####################################################################################################
@@ -477,11 +478,6 @@ public:
 
         // Need to set sem_empty to high
         sem_empty->post();
-
-        // Post a starting message - indicated by a negative timestamp
-        cv::Vec3d cvec(0,0,0);
-        cv::Vec3d tvec(0,0,0);
-        sendDataIPC(cvec, tvec, -500);
 
     }
 
@@ -892,7 +888,7 @@ public:
         estimatePose(corners, rvecs, tvecs);
 
         // If there is at least one detection
-        if (rvecs.size() && tvecs.size())
+        if (rvecs.size() && tvecs.size() && !first_iter)
         {
             // Only sending the first detection
             // Convert the rodirigues rotation vector to a center-wise vector
@@ -902,6 +898,13 @@ public:
             cv::Mat3d cvec_m = rotMat * cv::Mat(body_axis); // Vector from the centre of the gate pointing outwards in cam frame
             cv::Vec3d cvec(cvec_m.at<cv::Vec3d>());
             sendDataIPC(cvec, tvecs.at(0));
+        }
+        else if(first_iter) {
+            // Post a starting message - indicated by a negative timestamp
+            cv::Vec3d cvec(0,0,0);
+            cv::Vec3d tvec(0,0,0);
+            sendDataIPC(cvec, tvec, -500);
+            first_iter = false;
         }
 
         // Send all serial messages:
