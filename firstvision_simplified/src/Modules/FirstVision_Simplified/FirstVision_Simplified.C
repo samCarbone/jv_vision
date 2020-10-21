@@ -68,7 +68,7 @@ JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(houter, bool, "Use exclusive hue range",
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smin, unsigned char, "Set the sat min. Sat range is <smin, smax>.",
-                                       40, jevois::Range<unsigned char>(0, 255), ParamCateg);
+                                       140, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smax, unsigned char, "Set the sat max. Sat range is <smin, smax>.",
@@ -76,7 +76,7 @@ JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(smax, unsigned char, "Set the sat max. Sa
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmin, unsigned char, "Set the value min. Value range is <vmin, vmax>.",
-                                       45, jevois::Range<unsigned char>(0, 255), ParamCateg);
+                                       80, jevois::Range<unsigned char>(0, 255), ParamCateg);
 
 //! Parameter \relates FirstVision_Simplified
 JEVOIS_DECLARE_PARAMETER_WITH_CALLBACK(vmax, unsigned char, "Set the value max. Value range is <vmin, vmax>.",
